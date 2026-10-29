@@ -1,0 +1,110 @@
+# EnglishUp
+
+A web app for **studying English from A1 to C2**, made for Portuguese speakers. It runs in the browser, with nothing to install and no server. (The app interface is in Portuguese.)
+
+## What it is for
+
+It is for learning English every day, from zero to an advanced level:
+
+- you study **new words** in lessons by theme, with pronunciation (phonetic transcription), translation and example sentences;
+- you **read texts** with multiple-choice questions;
+- you do **exercises** (choosing, writing, matching words, pronunciation);
+- you **practise translating sentences** in a game with points;
+- the next day you take a **test** on the words you studied, and the app decides when each word comes back;
+- you can look up any word on the site in the **dictionary**.
+
+## How to open it
+
+Open the `index.html` file (double-click). Your progress is saved in the browser itself. If you open the version published on claude.ai, it is also saved to your account.
+
+## What it contains
+
+| | |
+|---|---|
+| Lessons | **187** (A1: 31, A2: 22, B1: 36, B2: 32, C1: 30, C2: 28) |
+| Words in the lessons | **4093**, with 20 to 25 words per lesson |
+| Reading texts | **187**, from 200 to 300 words, with 15 questions each |
+| Dictionary | **5977** words (the lesson words plus the support words used in the texts) |
+| Sentences to translate | **4321**, spread across the themes |
+| Verbs | **118** main verbs (85 irregular) with past, participle and conjugation in 5 tenses |
+| Grammar | **60** lessons (A1: 9, A2: 8, B1: 13, B2: 13, C1: 10, C2: 7), with 537 exercises |
+
+**Themes split into parts.** Large themes have several lessons, each with at least 20 words (for example *Travel · part 1* and *Travel · part 2*). 140 lessons are parts of a theme.
+
+## The tabs
+
+- **Today** – your day: today's test, the next lesson, translation practice and a word from the lesson that changes every 15 seconds (word, pronunciation and translation).
+- **Themes** – all the lessons. You pick a level (A1 to C2) and see the themes for that level.
+- **Phrases** – 12 situations (airport, hotel, restaurant, doctor, interview...) with 8 useful phrases each and a multiple-choice practice.
+- **Final exams and achievements** – in Progress. Each level has an exam of about 60 questions (pronunciation, meaning, writing, fill-in-the-blank sentences, grammar and questions about texts); you pass with 70%. There are also achievements (streaks, words, lessons, texts and exams).
+- **Plan for today** – on the Today screen, suggestions for what to do: an overdue test, a new lesson, grammar to review and a text to read.
+- **Grammar** – each lesson comes back for review (after 1, 2, 4, 7, 15, 30 days) if you scored 80% or more; with less, it comes back tomorrow.
+- **Test** – review of the words you studied on previous days. Below it, **Practise your mistakes**: words, grammar exercises and text questions that you still get wrong, by level or by theme. Each practice is new (chosen at random), and a question leaves the list once you get it right a few times in a row.
+- **Writing** – the translation game, three production exercises built from the lessons (**ordering sentences**, **writing a sentence** with a word, **completing the reading text** with the lesson's words) and the week's log.
+- **Daily goal** – on the Today screen you choose from 2 to 10 exercises per day. The streak ("days in a row") only goes up on days when you reach the goal. The exercises of each lesson (sentences, matching, translating, pronunciation, writing, mixed test) and the questions of a text (from the lesson or from the Texts tab) count. Reading the words and the mini-text, the daily test, grammar and writing do not count.
+- **Texts** – 94 practical texts by level (dialogues, emails, messages, notices, ads, letters, reviews, news, speeches...) with 5 questions each. The mistakes go into the practice of your mistakes.
+- **Grammar** – lessons by level with an explanation in Portuguese, how the form is made and examples; then 8 to 9 exercises: choosing the right option, writing the word, forming the word (word formation) and rewriting the sentence. Each lesson keeps your best result.
+- **Verbs** – a list of the main verbs (irregular, regular or all) with search in English, by form (went → go) or in Portuguese. Each verb has a conjugation table (present, past, future, present perfect and present continuous, for I, you, he / she / it, we, they) and its own practice. The general practice asks 15 new questions each time.
+- **Dictionary** – search by word in English or Portuguese, or by letter.
+- **Progress** – days in a row, words studied and mastered, history of tests and practices, and the path to C1/C2.
+
+## Inside each lesson
+
+1. **Words** – each word with pronunciation, translation, an example and a link to the Cambridge dictionary (where you can listen to the pronunciation).
+2. **Reading** – short sentences with translation (A1 and A2 only).
+3. **Text** – a text of 200 to 300 words and 15 multiple-choice questions.
+4. **Exercises** – fill-in-the-blank sentences (choose or write the word), matching word and translation, matching word and pronunciation, choosing the translation, choosing the right pronunciation, writing the word and a mixed test.
+5. **Translate** – translation practice with the theme's sentences.
+
+If you do not know a word in a text, look it up in the **Dictionary** tab.
+
+## How the review works
+
+When you finish a lesson, its words go into the next day's test. Each correct answer pushes the word further away (it comes back after 2, 4, 7, 15 and 30 days). Each mistake makes the word come back tomorrow. Words with an interval of 7 days or more count as "mastered".
+
+## The translation game
+
+Each practice has **10 sentences** in Portuguese for you to write in English. Your answer is compared word by word with the correct sentence, and you see what is extra and what is missing.
+
+- Correct sentence: 10 points, plus 2 for each correct answer in a row (combo), up to +10.
+- Almost correct sentence (one difference): 5 points.
+- Wrong sentence: 0 points and you lose the combo.
+
+Each practice is saved as a game in the **week's log** and **disappears by itself after 7 days**.
+
+## Where the content comes from
+
+- **A1 and A2** follow the themes of the [Cambridge A2 Key vocabulary list](https://www.cambridgeenglish.org/Images/506886-a2-key-2020-vocabulary-list.pdf).
+- **B1** uses words from the [Cambridge B1 Preliminary list](https://www.cambridgeenglish.org/pl/Images/506887-b1-preliminary-vocabulary-list.pdf).
+- **B2, C1 and C2** have no public official list: the themes and words were chosen by me, with ideas from the English Vocabulary Profile and the Academic Word List. They are a starting point and the level assignment is approximate.
+- The level descriptions (A1 to C2) and the IELTS and Cambridge equivalences are the ones the user provided.
+
+## File structure
+
+```
+EnglishUp/
+├── index.html            main page
+├── css/style.css         styles
+├── tools/
+│   └── check-words.js    checks that every word used is in the dictionary
+└── js/
+    ├── main.js, App.js   startup and screen control
+    ├── utils.js          helper functions (dates, text)
+    ├── data/             the content
+    │   ├── themes.js, themesA2.js, themesB1.js ... themesC2.js   the lessons (words)
+    │   ├── stories.js    reading texts and questions
+    │   ├── verbs.js      the main verbs and their forms
+    │   ├── grammar.js, grammarB–G.js   grammar lessons (A1–C2)
+    │   ├── texts.js, textsB-E.js                practical texts (TEXTS)
+    │   ├── glossary.js   support words (for the dictionary)
+    │   └── order.js      order of the lessons
+    ├── models/           Word, Theme, Dictionary, Progress, Quiz, MatchExercise,
+    │                     SentenceBank, ErrorReview, TranslationTask, ProductionTask (OrderTask, WriteTask, ClozeTask), PracticalText, GrammarLesson, GrammarQuiz, Verb, VerbDrill
+    ├── views/            one file per screen (Home, Themes, Lesson, Test, Quiz, Match,
+    │                     Writing, Translation, Grammar, GrammarQuiz, Dictionary, Progress)
+    ├── ui/               NavBar, Toast, Sentence
+    ├── grammar/          TextDiff (compares the translation with the correct answer)
+    └── services/         Storage (saves the progress)
+```
+
+The code is written in JavaScript with **classes** (object-oriented programming), one file per class.

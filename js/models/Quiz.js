@@ -1,0 +1,249 @@
+// Uma pergunta do teste
+class Question {
+  static TYPES = {
+    EN_PT: "en-pt",           // palavra inglesa → escolher a tradução
+    PT_EN: "pt-en",           // tradução → escolher a palavra inglesa
+    FILL: "fill",             // frase com espaço → escolher a palavra
+    FILL_WRITE: "fill-write", // frase com espaço → escrever a palavra
+    IPA: "ipa",               // palavra → escolher a pronúncia certa
+    WRITE: "write",           // tradução → escrever a palavra
+    CTX: "ctx",               // palavra dentro de uma frase → o que significa aí
+    SENT_PT: "sent-pt",       // frase inglesa → escolher a tradução da frase
+    SENT_EN: "sent-en",       // frase portuguesa → escolher a frase inglesa
+    FILL_PT: "fill-pt",       // frase com espaço e a tradução da frase → escolher a palavra
+    FILL_WRITE_PT: "fill-write-pt", // frase com espaço e tradução → escrever a palavra
+    IPA_EN: "ipa-en",         // pronúncia /…/ → escolher a palavra
+    WRITE_IPA: "write-ipa",   // pronúncia /…/ → escrever a palavra
+  };
+
+  // Variações de cada tipo, para os exercícios não parecerem sempre iguais (as chaves de progresso não mudam)
+  static EXTRAS = {
+    "en-pt+pt-en": ["ctx", "sent-pt", "sent-en"],
+    fill: ["fill-pt"],
+    "fill-write": ["fill-write-pt"],
+    ipa: ["ipa-en"],
+    write: ["write-ipa"],
+  };
+
+  static expand(types) {
+    if (!types) return types;
+    const extra = Question.EXTRAS[types.join("+")] || (types.length === 1 ? Question.EXTRAS[types[0]] : null) || [];
+    return [...types, ...extra];
+  }
+
+  static WRITTEN = [Question.TYPES.WRITE, Question.TYPES.FILL_WRITE, Question.TYPES.WRITE_IPA, Question.TYPES.FILL_WRITE_PT];
+
+  constructor(word, type, options, retry = false) {
+    this.word = word;
+    this.type = type;
+    this.options = options; // palavras (Word) para escolha múltipla
+    this.retry = retry;
+  }
+
+  get written() {
+    return Question.WRITTEN.includes(this.type);
+  }
+
+  isCorrect(given) {
+    if (this.written) return Utils.normalize(given) === Utils.normalize(this.word.en);
+    return given === this.word.key;
+  }
+}
+
+// Uma sessão de teste ou de treino
+class Quiz {
+  static ALTS = new Map(); // id do tema → { chave da palavra: [frases] }
+
+  // Frases alternativas de cada palavra, tiradas do texto da lição e dos textos de "Completar o texto"
+  static altSentences(theme, word) {
+    if (!Quiz.ALTS.has(theme.id)) {
+      const texts = [...(theme.story ? theme.story.paragraphs : []), ...((typeof CLOZE !== "undefined" && CLOZE[theme.id]) || [])];
+      const map = {};
+      texts.flatMap(t => t.match(/[^.!?]+[.!?”"]*\s*/g) || [t]).map(s => s.trim()).forEach(s => {
+        const n = s.split(/\s+/).length;
+        if (n < 5 || n > 28) return;
+        theme.wordRanges(s).forEach(r => { (map[r.key] = map[r.key] || []).includes(s) || map[r.key].push(s); });
+      });
+      Quiz.ALTS.set(theme.id, map);
+    }
+    return (Quiz.ALTS.get(theme.id)[word.key] || []).filter(s => s.toLowerCase() !== word.exEn.toLowerCase());
+  }
+
+  // Frase de uma pergunta com espaço. “Escolher” e “escrever” usam frases diferentes da mesma palavra:
+  // o exemplo e as frases de posição par num; as outras noutro. Sem alternativas, usa o exemplo
+  pickSentence(word, theme, type) {
+    const all = [{ en: word.exEn, pt: word.exPt }, ...Quiz.altSentences(theme, word).map(en => ({ en, pt: "" }))];
+    const writing = type === Question.TYPES.FILL_WRITE || type === Question.TYPES.FILL_WRITE_PT;
+    const mine = all.filter((_, i) => writing === (i % 2 === 1));
+    const pool = mine.length ? mine : all;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // Palavras com o mesmo sentido: se uma é a resposta, as outras nunca entram como opção errada
+  static SYNONYMS = [["hello", "hi"], ["goodbye", "bye", "see you later"], ["thank you", "thanks"], ["sorry", "excuse me", "pardon"], ["yes", "yeah"], ["no", "nope"]];
+
+  static synonymsOf(en) {
+    const e = en.toLowerCase();
+    return Quiz.SYNONYMS.filter(g => g.includes(e)).flatMap(g => g).filter(x => x !== e);
+  }
+
+  constructor(keys, { dict, progress, practice, max, types, counts = null, review = false }) {
+    this.dict = dict;
+    this.progress = progress;
+    this.practice = practice;
+    this.review = review; // treino dos erros: conta para as missões
+    this.counts = counts; // conta para a meta diária (exercícios das lições)
+    this.types = types || Object.values(Question.TYPES);
+    const chosen = Utils.shuffle(keys).slice(0, max);
+    this.queue = chosen.map(k => this.makeQuestion(dict.word(k)));
+    this.total = chosen.length;
+    this.index = 0;
+    this.score = 0;
+    this.answered = null;
+    this.wrong = [];
+    this.level = 0; // dificuldade adaptativa: -1 fácil, 0 normal, 1 difícil (só nos treinos)
+    this.adaptive = !!practice && !review;
+    this.recent = []; // últimas respostas à primeira tentativa (true/false)
+    this.log = []; // respostas da primeira tentativa: [pergunta, a tua resposta, a certa, acertaste?]
+  }
+
+  makeQuestion(word, retry = false) {
+    const T = Question.TYPES;
+    const theme = this.dict.theme(word.themeId);
+    // As frases com espaço só servem se a palavra aparecer no exemplo
+    const sentOk = !!(word.exEn && word.exPt);
+    let types = this.types.filter(t => ((t !== T.FILL && t !== T.FILL_WRITE && t !== T.CTX && t !== T.FILL_PT && t !== T.FILL_WRITE_PT) || theme.hasInExample(word))
+      && ((t !== T.FILL_PT && t !== T.FILL_WRITE_PT) || word.exPt)
+      && ((t !== T.SENT_PT && t !== T.SENT_EN) || sentOk) && ((t !== T.IPA_EN && t !== T.WRITE_IPA) || word.ipa));
+    if (!types.length) types = [this.types.some(t => Question.WRITTEN.includes(t)) ? T.WRITE : T.PT_EN];
+    let type = types[Math.floor(Math.random() * types.length)];
+
+    const sentTypes = [T.FILL, T.FILL_WRITE, T.FILL_PT, T.FILL_WRITE_PT];
+    const sent = type === T.FILL_WRITE_PT || type === T.FILL_PT ? { en: word.exEn, pt: word.exPt } : sentTypes.includes(type) ? this.pickSentence(word, theme, type) : null;
+    const isFill = type === T.FILL || type === T.FILL_PT;
+
+    // Distratores: nunca de lições à frente da palavra. Na 1.ª lição só do próprio tema; na 3.ª, das lições 1, 2 e 3
+    const upto = theme.index;
+    const syn = Quiz.synonymsOf(word.en);
+    const sentType = type === T.SENT_PT || type === T.SENT_EN;
+    const all = this.dict.allWords.filter(w => w.key !== word.key && w.pt !== word.pt && w.ipa !== word.ipa && !syn.includes(w.en.toLowerCase())
+      && (!sentType || (w.exEn && w.exPt && w.exEn !== word.exEn && w.exPt !== word.exPt)));
+    const pool = all.filter(w => this.dict.theme(w.themeId).index <= upto);
+    let distractors;
+    if (isFill) {
+      // Opções: só do mesmo tema na 1.ª lição; a partir da 2.ª, também de lições anteriores.
+      // Quase sempre da mesma classe de palavra; uma vez ou outra pode entrar outra para variar.
+      // Fora ficam as que já estão na frase ou cuja tradução repete palavras da frase (sinónimos)
+      const norm = s => Utils.normalize(s).split(/[^a-zà-ú]+/).filter(t => t.length >= 4);
+      const pt = new Set(norm(sent.pt + " " + word.pt));
+      const sentence = sent.en.toLowerCase();
+      const ok = w => w.key !== word.key && !sentence.includes(w.en.toLowerCase())
+        && !w.en.toLowerCase().split(" ").some(t => t.length > 3 && word.en.toLowerCase().includes(t))
+        && !norm(w.pt).some(t => pt.has(t));
+      const pool = all.filter(w => this.dict.theme(w.themeId).index <= upto && ok(w));
+      const same = Utils.shuffle(pool.filter(w => w.pos === word.pos));
+      const other = Utils.shuffle(pool.filter(w => w.pos !== word.pos));
+      const byLen = list => [...list].sort((x, y) => Math.abs(x.en.length - word.en.length) - Math.abs(y.en.length - word.en.length));
+      distractors = this.level > 0 ? byLen(same).slice(0, 3) : same.slice(0, 3);
+      if (this.level < 0 && other.length >= 3) distractors = other.slice(0, 3);
+      else if (other.length && (same.length < 3 || (this.level === 0 && Math.random() < 0.12))) distractors = same.slice(0, 2).concat(other.slice(0, 1));
+      distractors = distractors.concat(same.slice(distractors.length), other).slice(0, 3);
+    } else {
+      let same = Utils.shuffle(pool.filter(w => w.themeId === word.themeId));
+      let others = Utils.shuffle(pool.filter(w => w.themeId !== word.themeId));
+      if (this.level > 0) {
+        // Difícil: parecidas (mesmo tema e classe de palavra)
+        same = same.sort((x, y) => (y.pos === word.pos) - (x.pos === word.pos));
+        distractors = same.slice(0, 3).concat(others).slice(0, 3);
+      } else if (this.level < 0) {
+        // Fácil: de outros temas e outra classe
+        others = others.sort((x, y) => (x.pos === word.pos) - (y.pos === word.pos));
+        distractors = others.slice(0, 3).concat(same).slice(0, 3);
+      } else {
+        distractors = same.slice(0, 2).concat(others, same.slice(2)).slice(0, 3);
+      }
+    }
+    // Só se uma lição tiver muito poucas palavras é que se vai buscar o que falta às seguintes (quase nunca)
+    if (distractors.length < 3) {
+      const extra = Utils.shuffle(all.filter(w => !distractors.includes(w) && (type !== T.IPA || w.ipa !== word.ipa)));
+      distractors = distractors.concat(extra).slice(0, 3);
+    }
+    const q = new Question(word, type, Utils.shuffle([word, ...distractors]), retry);
+    q.sentence = sent;
+    return q;
+  }
+
+  // 3 certas seguidas sobem a dificuldade; 2 erradas nas últimas 3 descem. As perguntas que faltam são refeitas
+  adapt(ok) {
+    if (!this.adaptive) return;
+    this.recent.push(ok);
+    const last = this.recent.slice(-3);
+    let change = 0;
+    if (last.length === 3 && last.every(Boolean) && this.level < 1) change = 1;
+    else if (last.filter(x => !x).length >= 2 && this.level > -1) change = -1;
+    if (!change) return;
+    this.level += change;
+    this.recent = [];
+    for (let j = this.index + 1; j < this.queue.length; j++) {
+      if (!this.queue[j].retry) this.queue[j] = this.makeQuestion(this.queue[j].word);
+    }
+  }
+
+  get levelLabel() {
+    return this.level > 0 ? "difícil" : this.level < 0 ? "fácil" : "normal";
+  }
+
+  // Linha compacta para o registo do exercício (textos curtos, para ocupar pouco espaço)
+  entry(q, given, ok) {
+    const T = Question.TYPES, w = q.word, cut = s => String(s).slice(0, 70);
+    const text = o => ({ [T.EN_PT]: o.pt, [T.CTX]: o.pt, [T.IPA]: `/${o.ipa}/`, [T.SENT_PT]: o.exPt, [T.SENT_EN]: o.exEn })[q.type] ?? o.en;
+    const asked = { [T.EN_PT]: w.en, [T.IPA]: w.en, [T.PT_EN]: w.pt, [T.WRITE]: w.pt, [T.CTX]: w.exEn, [T.SENT_PT]: w.exEn, [T.SENT_EN]: w.exPt, [T.IPA_EN]: `/${w.ipa}/`, [T.WRITE_IPA]: `/${w.ipa}/` }[q.type]
+      || (q.sentence?.en || w.exEn).replace(new RegExp(w.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), "___");
+    const mine = q.written ? given : text(this.dict.word(given));
+    return [cut(asked), cut(mine || "—"), cut([T.FILL, T.FILL_WRITE, T.WRITE_IPA, T.FILL_PT, T.FILL_WRITE_PT].includes(q.type) ? w.en : text(w)), ok];
+  }
+
+  get current() {
+    return this.queue[this.index];
+  }
+
+  get finished() {
+    return this.index >= this.queue.length;
+  }
+
+  get percent() {
+    return this.total ? Math.round(this.score / this.total * 100) : 0;
+  }
+
+  get progressPercent() {
+    return Math.round(this.index / this.queue.length * 100);
+  }
+
+  answer(given) {
+    if (this.answered) return;
+    const q = this.current;
+    const ok = q.isCorrect(given);
+    this.answered = { ok, given };
+    if (!q.retry) { this.log.push(this.entry(q, given, ok)); this.progress.recordStat?.(q.word, q.type, ok); this.adapt(ok); }
+    // Só a primeira tentativa conta; as erradas voltam no fim da sessão
+    if (q.retry) return;
+    if (ok) this.score++;
+    else {
+      if (!q.written) this.progress.recordConfusion(q.word.key, given);
+      this.wrong.push(q.word);
+      this.queue.push(this.makeQuestion(q.word, true));
+    }
+    if (!this.practice) this.progress.recordAnswer(q.word.key, ok);
+    else if (ok && this.counts) this.progress.practiceCredit(q.word.key);
+    if (this.review && ok) this.progress.resolveWord(q.word.key);
+  }
+
+  next() {
+    this.index++;
+    this.answered = null;
+    if (this.finished) {
+      this.progress.addTest(this.score, this.total, this.practice, this.counts, this.log);
+      if (this.review) this.progress.addReview(this.percent);
+    }
+  }
+}
