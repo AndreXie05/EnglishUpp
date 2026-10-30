@@ -1,4 +1,4 @@
-# EnglishUp
+# EnglishUpp
 
 A web app for **studying English from A1 to C2**, made for Portuguese speakers. It runs in the browser, with nothing to install and no server. (The app interface is in Portuguese.)
 
@@ -82,7 +82,7 @@ Each practice is saved as a game in the **week's log** and **disappears by itsel
 ## File structure
 
 ```
-EnglishUp/
+EnglishUpp/
 ├── index.html            main page
 ├── css/style.css         styles
 ├── tools/

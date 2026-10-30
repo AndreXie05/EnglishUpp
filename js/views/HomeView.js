@@ -17,8 +17,18 @@ class HomeView extends View {
       ${this.lessonCard()}
       ${this.writingCard()}
       ${this.weekCard()}
+      ${this.backupReminder()}
       <p class="muted" style="margin:0;font-size:.9rem">Como funciona: todos os dias estudas uma lição nova. No dia seguinte, fazes um teste. Se acertas, a palavra volta daqui a 2, 4, 7 e 15 dias. Se erras, volta amanhã.</p>
       <div class="sync">${this.esc(this.app.storage.label)}</div>`;
+  }
+
+  // Lembrete discreto: sem cópia de segurança há 7 dias (ou nunca, depois de começares a estudar)
+  backupReminder() {
+    const p = this.progress, last = p.data.backupAt;
+    if (!p.wordCount || (last && DateUtils.addDays(last, 7) > DateUtils.today())) return "";
+    return `<section class="panel"><div class="eyebrow">Cópia de segurança</div>
+      <p class="muted" style="margin:0">${last ? `A última cópia foi a ${this.esc(DateUtils.format(last))}.` : "Ainda não guardaste nenhuma cópia."} Guarda o progresso num ficheiro, para não o perderes se o navegador limpar os dados.</p>
+      <div class="row"><button class="btn small" data-action="nav" data-v="progresso">Fazer cópia agora</button></div></section>`;
   }
 
   // Nível e missões de hoje, com atalho para o Jogo

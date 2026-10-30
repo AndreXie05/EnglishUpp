@@ -61,7 +61,9 @@ class Quiz {
       const map = {};
       texts.flatMap(t => t.match(/[^.!?]+[.!?”"]*\s*/g) || [t]).map(s => s.trim()).forEach(s => {
         const n = s.split(/\s+/).length;
-        if (n < 5 || n > 28) return;
+        if (n < 6 || n > 28) return;
+        // “What is your ___?” serve para quase qualquer palavra: não dá contexto para escolher
+        if (/\bwhat(?: is|'s) your\b[^.!?]{0,40}\?/i.test(s)) return;
         theme.wordRanges(s).forEach(r => { (map[r.key] = map[r.key] || []).includes(s) || map[r.key].push(s); });
       });
       Quiz.ALTS.set(theme.id, map);
@@ -94,8 +96,9 @@ class Quiz {
     this.review = review; // treino dos erros: conta para as missões
     this.counts = counts; // conta para a meta diária (exercícios das lições)
     this.types = types || Object.values(Question.TYPES);
-    const chosen = Utils.shuffle(keys).slice(0, max);
-    this.queue = chosen.map(k => this.makeQuestion(dict.word(k)));
+    const chosen = this.pickKeys(keys, max);
+    this.queue = [];
+    chosen.forEach(k => this.queue.push(this.makeQuestion(dict.word(k), false, this.queue[this.queue.length - 1]?.type)));
     this.total = chosen.length;
     this.index = 0;
     this.score = 0;
@@ -107,7 +110,32 @@ class Quiz {
     this.log = []; // respostas da primeira tentativa: [pergunta, a tua resposta, a certa, acertaste?]
   }
 
-  makeQuestion(word, retry = false) {
+  // Sorteio com peso: as palavras em que erras mais têm mais hipóteses de entrar quando há mais palavras do que perguntas
+  pickKeys(keys, max) {
+    if (keys.length <= max) return Utils.shuffle(keys);
+    const weight = k => {
+      const st = this.progress.wordState?.(k);
+      if (!st) return 1;
+      return 1 + Math.min(3, st.wrong || 0) * (st.box >= Progress.MASTERED_BOX ? 0.5 : 1);
+    };
+    return keys.map(k => [Math.random() ** (1 / weight(k)), k]).sort((a, b) => b[0] - a[0]).slice(0, max).map(x => x[1]);
+  }
+
+  // Palavras de pt muito parecidas (uma contém a outra, ou partilham uma palavra de 4+ letras) confundem em vez de testar
+  static ptTokens(s) {
+    return Utils.normalize(s).split(/[^a-zà-ú]+/).filter(t => t.length >= 4);
+  }
+
+  static similarPt(a, b) {
+    const x = Utils.normalize(a), y = Utils.normalize(b);
+    if (!x || !y) return false;
+    if (x === y) return true;
+    if (Math.min(x.length, y.length) >= 4 && (x.includes(y) || y.includes(x))) return true;
+    const ty = new Set(Quiz.ptTokens(b));
+    return Quiz.ptTokens(a).some(t => ty.has(t));
+  }
+
+  makeQuestion(word, retry = false, avoid = null) {
     const T = Question.TYPES;
     const theme = this.dict.theme(word.themeId);
     // As frases com espaço só servem se a palavra aparecer no exemplo
@@ -116,6 +144,8 @@ class Quiz {
       && ((t !== T.FILL_PT && t !== T.FILL_WRITE_PT) || word.exPt)
       && ((t !== T.SENT_PT && t !== T.SENT_EN) || sentOk) && ((t !== T.IPA_EN && t !== T.WRITE_IPA) || word.ipa));
     if (!types.length) types = [this.types.some(t => Question.WRITTEN.includes(t)) ? T.WRITE : T.PT_EN];
+    const others = types.filter(t => t !== avoid);
+    if (others.length) types = others;
     let type = types[Math.floor(Math.random() * types.length)];
 
     const sentTypes = [T.FILL, T.FILL_WRITE, T.FILL_PT, T.FILL_WRITE_PT];
@@ -168,9 +198,27 @@ class Quiz {
       const extra = Utils.shuffle(all.filter(w => !distractors.includes(w) && (type !== T.IPA || w.ipa !== word.ipa)));
       distractors = distractors.concat(extra).slice(0, 3);
     }
+    if (!isFill) distractors = this.cleanDistractors(distractors, word, type, all);
     const q = new Question(word, type, Utils.shuffle([word, ...distractors]), retry);
     q.sentence = sent;
     return q;
+  }
+
+  // Tira opções que se confundem com a certa ou entre si (mesmo texto, traduções parecidas), mantendo a ordem de preferência.
+  // Os lugares que ficam vagos vêm de outras palavras (só de lições até à da palavra). Sem alternativas, mantém o que havia
+  cleanDistractors(chosen, word, type, all) {
+    const T = Question.TYPES;
+    const shown = { [T.EN_PT]: w => w.pt, [T.CTX]: w => w.pt, [T.IPA]: w => w.ipa, [T.SENT_PT]: w => w.exPt, [T.SENT_EN]: w => w.exEn }[type] || (w => w.en);
+    const byPt = [T.EN_PT, T.CTX, T.PT_EN, T.WRITE, T.SENT_PT, T.SENT_EN].includes(type);
+    const clash = (a, b) => Utils.normalize(shown(a)) === Utils.normalize(shown(b)) || (byPt && Quiz.similarPt(a.pt, b.pt));
+    const upto = this.dict.theme(word.themeId).index;
+    const spare = Utils.shuffle(all.filter(w => !chosen.includes(w) && this.dict.theme(w.themeId).index <= upto));
+    const out = [];
+    for (const w of [...chosen, ...spare]) {
+      if (out.length >= 3) break;
+      if (!clash(w, word) && !out.some(o => clash(w, o))) out.push(w);
+    }
+    return out.length === 3 ? out : chosen;
   }
 
   // 3 certas seguidas sobem a dificuldade; 2 erradas nas últimas 3 descem. As perguntas que faltam são refeitas
@@ -185,7 +233,7 @@ class Quiz {
     this.level += change;
     this.recent = [];
     for (let j = this.index + 1; j < this.queue.length; j++) {
-      if (!this.queue[j].retry) this.queue[j] = this.makeQuestion(this.queue[j].word);
+      if (!this.queue[j].retry) this.queue[j] = this.makeQuestion(this.queue[j].word, false, this.queue[j - 1]?.type);
     }
   }
 
@@ -231,7 +279,8 @@ class Quiz {
     else {
       if (!q.written) this.progress.recordConfusion(q.word.key, given);
       this.wrong.push(q.word);
-      this.queue.push(this.makeQuestion(q.word, true));
+      // a pergunta repetida volta daqui a umas perguntas (ou no fim), e com outro tipo
+      this.queue.splice(Math.min(this.index + 4, this.queue.length), 0, this.makeQuestion(q.word, true, q.type));
     }
     if (!this.practice) this.progress.recordAnswer(q.word.key, ok);
     else if (ok && this.counts) this.progress.practiceCredit(q.word.key);

@@ -1,5 +1,7 @@
 // Ecrã do exercício "ligar": cada palavra inglesa à sua tradução ou à sua pronúncia
 class MatchView extends View {
+  static lastVariant = {};
+
   constructor(app, theme, mode = "pt") {
     super(app);
     this.theme = theme;
@@ -7,7 +9,10 @@ class MatchView extends View {
     // Variações: sentido contrário ou, nas traduções, frases de exemplo
     const usable = theme.words.filter(w => w.exPt && w.exPt !== w.pt);
     const choices = mode === "ipa" ? ["en-ipa", "ipa-en"] : ["en-pt", "pt-en", ...(usable.length >= theme.words.length * 0.8 ? ["en-sent"] : [])];
-    this.variant = Utils.pick(choices);
+    // não repete a variante da última vez que fizeste este exercício nesta lição
+    const memo = MatchView.lastVariant, id = `${theme.id}:${mode}`;
+    this.variant = Utils.pick(choices.length > 1 ? choices.filter(c => c !== memo[id]) : choices);
+    memo[id] = this.variant;
     this.exercise = new MatchExercise(this.variant === "en-sent" ? usable : theme.words);
     this.recorded = false;
   }

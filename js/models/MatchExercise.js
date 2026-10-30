@@ -13,7 +13,9 @@ class MatchExercise {
 
   startRound() {
     this.left = Utils.shuffle(this.current);
-    this.right = Utils.shuffle(this.current);
+    // nenhuma tradução fica na mesma linha da sua palavra
+    do this.right = Utils.shuffle(this.current);
+    while (this.left.length > 1 && this.right.some((w, i) => w === this.left[i]));
     this.matched = new Set();
     this.selected = null;
     this.wrongPair = null;

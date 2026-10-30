@@ -37,7 +37,7 @@ class Reminder {
     const p = app.progress, r = Reminder.settings(p);
     if (!r || r.last === DateUtils.today() || p.goalMet || new Date().getHours() < r.hour) return;
     try {
-      new Notification("EnglishUp", { body: Reminder.message(p) });
+      new Notification("EnglishUpp", { body: Reminder.message(p) });
     } catch (e) {
       return;
     }

@@ -114,7 +114,7 @@ class ProgressView extends View {
 
   /* ----- cópia de segurança: exportar e importar o progresso ----- */
 
-  static BACKUP_APP = "EnglishUp";
+  static BACKUP_APP = "EnglishUpp";
 
   backupText() {
     return JSON.stringify({ app: ProgressView.BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), data: this.progress.toJSON() });
@@ -124,9 +124,10 @@ class ProgressView extends View {
   static parseBackup(text) {
     try {
       const obj = JSON.parse(text);
-      const data = obj?.app === ProgressView.BACKUP_APP ? obj.data : null;
+      // aceita também as cópias antigas, feitas quando a app ainda se chamava EnglishUp
+      const data = [ProgressView.BACKUP_APP, "EnglishUp"].includes(obj?.app) ? obj.data : null;
       if (!data || typeof data !== "object" || typeof data.words !== "object" || typeof data.lessons !== "object") {
-        return { error: "Este ficheiro não parece uma cópia do EnglishUp." };
+        return { error: "Este ficheiro não parece uma cópia do EnglishUpp." };
       }
       return { data, exportedAt: obj.exportedAt };
     } catch (e) {
@@ -192,7 +193,7 @@ class ProgressView extends View {
       const blob = new Blob([this.backupText()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `englishup-progresso-${DateUtils.today()}.json`;
+      a.download = `englishupp-progresso-${DateUtils.today()}.json`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);

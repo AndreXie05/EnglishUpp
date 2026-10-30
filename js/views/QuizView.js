@@ -24,6 +24,18 @@ class QuizView extends View {
     else document.getElementById("wr")?.focus();
   }
 
+  // 1 a 4 escolhem a opção; Enter continua (se o botão "Continuar" já tem o foco, é ele que trata do Enter)
+  onKey(e) {
+    const qz = this.quiz;
+    if (qz.finished) return;
+    if (qz.answered) {
+      if (e.key === "Enter" && document.activeElement?.id !== "nextbtn") this.onAction("next");
+      return;
+    }
+    const q = qz.current, n = Number(e.key);
+    if (!q.written && n >= 1 && n <= q.options.length) this.submit(q.options[n - 1].key);
+  }
+
   questionScreen() {
     const q = this.quiz.current;
     const w = q.word;
@@ -47,7 +59,7 @@ class QuizView extends View {
         break;
       case T.FILL_WRITE:
         prompt = `<div class="eyebrow">Escreve a palavra que falta</div>${this.sentence(q, theme, a)}
-          <div class="muted">Dica: significa “${this.esc(w.pt)}” e tem ${w.en.length} letras</div>`;
+          ${a ? "" : `<div class="muted">Dica: significa “${this.esc(w.pt)}” e tem ${w.en.length} letras</div>`}`;
         area = this.writeForm(a);
         break;
       case T.IPA:
@@ -56,12 +68,12 @@ class QuizView extends View {
         break;
       case T.FILL_PT:
         prompt = `<div class="eyebrow">Escolhe a palavra que falta</div>${this.sentence(q, theme, a)}
-          <div class="muted">${this.esc(q.sentence.pt)}</div>`;
+          ${a ? "" : `<div class="muted">${this.esc(q.sentence.pt)}</div>`}`;
         area = this.options(q, o => this.enRich(o), "", true);
         break;
       case T.FILL_WRITE_PT:
         prompt = `<div class="eyebrow">Escreve a palavra que falta</div>${this.sentence(q, theme, a)}
-          <div class="muted">${this.esc(q.sentence.pt)}</div><div class="muted">A palavra tem ${w.en.length} letras</div>`;
+          ${a ? "" : `<div class="muted">${this.esc(q.sentence.pt)}</div>`}<div class="muted">A palavra tem ${w.en.length} letras</div>`;
         area = this.writeForm(a);
         break;
       case T.CTX:
@@ -91,14 +103,14 @@ class QuizView extends View {
 
     return `<div class="row" style="justify-content:space-between"><span class="eyebrow">${this.label} · ${this.quiz.index + 1} de ${this.quiz.queue.length}${q.retry ? " · nova tentativa" : ""}${this.quiz.adaptive ? ` · dificuldade ${this.quiz.levelLabel}` : ""}</span><button class="linkbtn" data-section="exercicios" data-action="${this.backTheme ? "open" : "nav"}" data-v="${this.backTheme ? this.backTheme.id : "hoje"}">Sair</button></div>
       <div class="bar"><i style="width:${this.quiz.progressPercent}%"></i></div>
-      <section class="panel quizcard" style="gap:16px">${prompt}${area}${a ? this.feedback(w, a) : ""}</section>`;
+      <section class="panel quizcard" style="gap:16px">${prompt}${area}${a ? this.feedback(w, a) : ""}</section>
+      <p class="muted" style="margin:0;font-size:.85rem">${q.written ? "Escreve e carrega em Enter" : `Teclas 1 a ${q.options.length} para responder`} · Enter para continuar.</p>`;
   }
 
   // Frase do exemplo com um espaço no lugar da palavra (depois de responder, mostra-a completa)
   sentence(q, theme, answered) {
     const w = q.word, s = q.sentence || { en: w.exEn, pt: w.exPt };
-    return `<p class="sentence">${Sentence.render(s.en, theme, answered ? null : w.key)}</p>
-      ${answered && s.pt ? `<div class="muted">${this.esc(s.pt)}</div>` : ""}`;
+    return `<p class="sentence">${Sentence.render(s.en, theme, answered ? null : w.key)}</p>`;
   }
 
   writeForm(a) {
