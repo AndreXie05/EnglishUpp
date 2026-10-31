@@ -2098,5 +2098,10 @@ const GLOSSARY = [
   ["tail","teɪl","subst.","cauda"],
   ["tale","teɪl","subst.","conto"],
   ["vehicle","ˈviːəkl","subst.","veículo"],
-  ["web","web","subst.","teia"]
+  ["web","web","subst.","teia"],
+  ["approval","əˈpruːvl","subst.","aprovação"],
+  ["bless","bles","verbo","abençoar"],
+  ["rocket","ˈrɒkɪt","subst.","foguetão"],
+  ["slide","slaɪd","subst.","diapositivo"],
+  ["thirsty","ˈθɜːsti","adj.","com sede"]
 ];

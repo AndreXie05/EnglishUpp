@@ -24,7 +24,6 @@ const missing = vm.runInContext(`(() => {
     t.words.forEach(w => texts.push(w.exEn));
   });
   Object.values(CLOZE).forEach(list => list.forEach(x => texts.push(x)));
-  CASES.forEach(c => { texts.push(c.title, c.intro, c.explain || ""); (c.objects || c.evidence || []).forEach(o => texts.push(o.name, o.text)); (c.evidence || []).forEach(o => texts.push(o.name, o.text)); (c.suspects || []).forEach(x => texts.push(x.statement)); (c.locks || []).forEach(l => { texts.push(l.q, l.explain); l.options.forEach(o => texts.push(o)); }); });
   Object.values(CROSS).forEach(c => texts.push(c));
   FIXES.forEach(f => texts.push(f.wrong, f.right));
   PHRASES.forEach(p => { p.lines.forEach(l => texts.push(l[0])); });

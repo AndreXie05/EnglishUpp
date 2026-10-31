@@ -18,7 +18,12 @@ class PhrasesView extends View {
       <div class="themes">${list.map(p => this.card(p)).join("")}</div>`;
   }
 
-  static ICONS = { airport: "✈️", hotel: "🏨", restaurant: "🍽️", doctor: "🩺", shopping: "🛍️", directions: "🧭", phone: "📞", interview: "💼", meeting: "📊", friends: "🧑‍🤝‍🧑", transport: "🚌", bank: "🏦", introductions: "👋", weather: "⛅", post: "📮", cafe: "☕" };
+  static ICONS = { airport: "✈️", hotel: "🏨", restaurant: "🍽️", doctor: "🩺", shopping: "🛍️", directions: "🧭", phone: "📞", interview: "💼", meeting: "📊", friends: "🧑‍🤝‍🧑", transport: "🚌", bank: "🏦", introductions: "👋", weather: "⛅", post: "📮", cafe: "☕",
+    greetings: "🙋", polite: "🙏", understand: "🤔", family: "👨‍👩‍👧", feelings: "😊", routine: "⏰", likes: "❤️", time: "🕒", athome: "🏠",
+    supermarket: "🛒", clothes: "👕", taxi: "🚕", train: "🚆", cinema: "🎬", pharmacy: "💊", invitations: "🎉", past: "⏪", future: "⏩",
+    homeproblems: "🔧", phonetech: "📱", holiday: "🏖️", hobbies: "⚽", workday: "💻", school: "🎓", opinions: "💭", agree: "🤝",
+    complaints: "😠", advice: "💡", renting: "🔑", emergency: "🚨", health: "🏃", travelissues: "🧳", emailwork: "✉️", newsworld: "📰",
+    negotiate: "💶", presenting: "🎤", debate: "⚖️", idioms: "🗣️", phrasal: "🔀", formal: "🎩", soften: "🕊️", connect: "🔗", idioms2: "🧠" };
 
   card(p) {
     const open = this.open === p.id, color = ThemesView.LEVEL_COLORS[p.level] || "var(--accent)";
@@ -33,8 +38,26 @@ class PhrasesView extends View {
     const color = ThemesView.LEVEL_COLORS[p.level] || "var(--accent)";
     return `<section class="panel openphr" style="--lc:${color}"><div class="row" style="justify-content:space-between"><div><span class="eyebrow tnum">${p.level}</span><h2>${PhrasesView.ICONS[p.id] || "💬"} ${this.esc(p.pt)}</h2></div>
       <button class="btn ghost small" data-action="ptoggle" data-v="${p.id}">Fechar</button></div>
-      ${p.lines.map(([en, pt]) => `<div class="ex">${this.esc(en)}<br><i>${this.esc(pt)}</i></div>`).join("")}
+      ${p.lines.map(([en, pt]) => this.line(en, pt)).join("")}
       <div class="row"><button class="btn" data-action="ptrain" data-v="${p.id}">Treinar estas frases</button></div></section>`;
+  }
+
+  // Uma frase: inglês, pronúncia /…/ por baixo, tradução, e botão para a ouvir
+  line(en, pt) {
+    const ipa = PHRASE_IPA[en];
+    return `<div class="phr"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><strong>${this.esc(en)}</strong>
+      <button class="btn ghost small" data-action="pspeak" data-v="${this.esc(en)}" aria-label="Ouvir a frase" title="Ouvir">🔊</button></div>
+      ${ipa ? `<div class="ipa">/${this.esc(ipa)}/</div>` : ""}<div class="muted">${this.esc(pt)}</div></div>`;
+  }
+
+  // Lê a frase em voz alta com a voz inglesa do aparelho, se houver
+  speak(text) {
+    if (!("speechSynthesis" in window)) return this.app.toast.show("Este navegador não sabe ler em voz alta.");
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-GB";
+    u.rate = 0.85;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   }
 
   // Treino: dada a frase em português, escolher a frase em inglês
@@ -49,6 +72,7 @@ class PhrasesView extends View {
   onAction(action, value) {
     switch (action) {
       case "plevel": this.level = value || null; break;
+      case "pspeak": this.speak(value); return true;
       case "ptoggle": this.open = this.open === value ? null : value; break;
       case "ptrain":
         this.app.show(new GrammarQuizView(this.app, new GrammarQuiz(this.lesson(PHRASES.find(p => p.id === value)))));

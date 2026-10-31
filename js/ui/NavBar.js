@@ -1,6 +1,6 @@
 // Separadores do topo
 class NavBar {
-  static ITEMS = [["hoje", "Hoje", "🏠"], ["jogo", "Jogo", "🎮"], ["temas", "Temas", "🗂️"], ["teste", "Teste", "✅"], ["escrita", "Escrita", "✍️"], ["textos", "Textos", "📄"], ["misterios", "Mistérios", "🕵️"], ["frases", "Frases", "💬"], ["gramatica", "Gramática", "📐"], ["verbos", "Verbos", "🔁"], ["dicionario", "Dicionário", "📖"], ["progresso", "Progresso", "📈"]];
+  static ITEMS = [["hoje", "Hoje", "🏠"], ["jogo", "Jogo", "🎮"], ["temas", "Temas", "🗂️"], ["teste", "Teste", "✅"], ["escrita", "Escrita", "✍️"], ["textos", "Textos", "📄"], ["frases", "Frases", "💬"], ["gramatica", "Gramática", "📐"], ["verbos", "Verbos", "🔁"], ["dicionario", "Dicionário", "📖"], ["progresso", "Progresso", "📈"]];
 
   constructor(app) {
     this.app = app;

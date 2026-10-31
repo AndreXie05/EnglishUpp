@@ -81,6 +81,55 @@ class Quiz {
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
+  // Frases com tradução em que a palavra aparece: o exemplo e as frases da leitura curta do tema
+  static pairs(theme, word) {
+    const extra = theme.text.filter(s => s.pt && s.en.toLowerCase() !== word.exEn.toLowerCase() && theme.wordRanges(s.en).some(r => r.key === word.key));
+    return [{ en: word.exEn, pt: word.exPt }, ...extra.map(s => ({ en: s.en, pt: s.pt }))];
+  }
+
+  // Uma frase com tradução, sorteada entre as que existem (para não ser sempre o mesmo exemplo)
+  pickPair(word, theme) {
+    const all = Quiz.pairs(theme, word);
+    return all[Math.floor(Math.random() * all.length)];
+  }
+
+  // Frase para “o que significa nesta frase”: não precisa de tradução, por isso há muito por onde escolher
+  pickAny(word, theme) {
+    const alts = Quiz.altSentences(theme, word).map(en => ({ en, pt: "" }));
+    const all = alts.length && Math.random() < 0.75 ? [...alts, ...Quiz.pairs(theme, word).slice(1)] : Quiz.pairs(theme, word).concat(alts);
+    return all[Math.floor(Math.random() * all.length)];
+  }
+
+  // A frase com a palavra trocada por outra (e a/an acertado), ou null se a palavra não aparece na forma base
+  static swapWord(sentence, word, other, theme) {
+    const r = theme.wordRanges(sentence).find(x => x.key === word.key);
+    if (!r || sentence.slice(r.start, r.end).toLowerCase() !== word.en.toLowerCase()) return null;
+    if (new RegExp(`\\b${Utils.escapeRegExp(other.en)}\\b`, "i").test(sentence)) return null;
+    const rep = /[A-Z]/.test(sentence[r.start]) ? other.en[0].toUpperCase() + other.en.slice(1) : other.en;
+    const vowel = /^(?:hour|honest|honou?r|heir)/i.test(rep) || (/^[aeiou]/i.test(rep) && !/^(?:uni|use|usu|eu|one)/i.test(rep));
+    const before = sentence.slice(0, r.start).replace(/\b(a|an)(\s+)$/i, (m, art, sp) => (art[0] === "A" ? (vowel ? "An" : "A") : vowel ? "an" : "a") + sp);
+    return before + rep + sentence.slice(r.end);
+  }
+
+  // Opções de “escolhe a frase”: a certa e, quando dá, a mesma frase com uma palavra trocada (muito parecidas)
+  sentenceOptions(word, theme, sent, distractors, type, pool) {
+    const T = Question.TYPES;
+    const right = Object.assign(Object.create(word), { exEn: sent.en, exPt: sent.pt });
+    const wrong = [];
+    if (type === T.SENT_EN) {
+      const syn = Quiz.synonymsOf(word.en);
+      const near = Utils.shuffle(pool.filter(w => w.key !== word.key && w.pos === word.pos && !syn.includes(w.en.toLowerCase()) && !Quiz.similarPt(w.pt, word.pt)))
+        .sort((x, y) => (y.themeId === word.themeId) - (x.themeId === word.themeId));
+      for (const d of near) {
+        if (wrong.length >= 3) break;
+        if (wrong.some(o => Quiz.similarPt(o.pt, d.pt))) continue;
+        const s = Quiz.swapWord(sent.en, word, d, theme);
+        if (s) wrong.push(Object.assign(Object.create(d), { exEn: s }));
+      }
+    }
+    return Utils.shuffle([right, ...wrong, ...distractors.slice(wrong.length)]);
+  }
+
   // Palavras com o mesmo sentido: se uma é a resposta, as outras nunca entram como opção errada
   static SYNONYMS = [["hello", "hi"], ["goodbye", "bye", "see you later"], ["thank you", "thanks"], ["sorry", "excuse me", "pardon"], ["yes", "yeah"], ["no", "nope"]];
 
@@ -121,6 +170,15 @@ class Quiz {
     return keys.map(k => [Math.random() ** (1 / weight(k)), k]).sort((a, b) => b[0] - a[0]).slice(0, max).map(x => x[1]);
   }
 
+  static STOP = new Set("the a an is are am it its this that these those my your his her our their i you he she we they to of in on at and or be was were do does did for with from by".split(" "));
+
+  // Frase com no máximo 2 palavras de contexto fora da palavra em branco (e das palavras de função)
+  static vague(sentence, word, theme) {
+    const r = theme.wordRanges(sentence).find(x => x.key === word.key);
+    const rest = r ? sentence.slice(0, r.start) + " " + sentence.slice(r.end) : sentence;
+    return rest.split(/[^A-Za-z']+/).filter(t => t && !Quiz.STOP.has(t.toLowerCase())).length <= 2;
+  }
+
   // Palavras de pt muito parecidas (uma contém a outra, ou partilham uma palavra de 4+ letras) confundem em vez de testar
   static ptTokens(s) {
     return Utils.normalize(s).split(/[^a-zà-ú]+/).filter(t => t.length >= 4);
@@ -149,7 +207,13 @@ class Quiz {
     let type = types[Math.floor(Math.random() * types.length)];
 
     const sentTypes = [T.FILL, T.FILL_WRITE, T.FILL_PT, T.FILL_WRITE_PT];
-    const sent = type === T.FILL_WRITE_PT || type === T.FILL_PT ? { en: word.exEn, pt: word.exPt } : sentTypes.includes(type) ? this.pickSentence(word, theme, type) : null;
+    let sent = [T.FILL_PT, T.FILL_WRITE_PT, T.SENT_PT, T.SENT_EN].includes(type) ? this.pickPair(word, theme)
+      : type === T.CTX ? this.pickAny(word, theme) : sentTypes.includes(type) ? this.pickSentence(word, theme, type) : null;
+    // Frase com pouco contexto (“The car is ___.”) serve para várias palavras: mostra a tradução da frase
+    if (type === T.FILL && word.exPt && Quiz.vague(sent.en, word, theme)) {
+      type = T.FILL_PT;
+      sent = this.pickPair(word, theme);
+    }
     const isFill = type === T.FILL || type === T.FILL_PT;
 
     // Distratores: nunca de lições à frente da palavra. Na 1.ª lição só do próprio tema; na 3.ª, das lições 1, 2 e 3
@@ -177,7 +241,7 @@ class Quiz {
       distractors = this.level > 0 ? byLen(same).slice(0, 3) : same.slice(0, 3);
       if (this.level < 0 && other.length >= 3) distractors = other.slice(0, 3);
       else if (other.length && (same.length < 3 || (this.level === 0 && Math.random() < 0.12))) distractors = same.slice(0, 2).concat(other.slice(0, 1));
-      distractors = distractors.concat(same.slice(distractors.length), other).slice(0, 3);
+      distractors = [...new Set(distractors.concat(same, other))].slice(0, 3);
     } else {
       let same = Utils.shuffle(pool.filter(w => w.themeId === word.themeId));
       let others = Utils.shuffle(pool.filter(w => w.themeId !== word.themeId));
@@ -199,7 +263,8 @@ class Quiz {
       distractors = distractors.concat(extra).slice(0, 3);
     }
     if (!isFill) distractors = this.cleanDistractors(distractors, word, type, all);
-    const q = new Question(word, type, Utils.shuffle([word, ...distractors]), retry);
+    const options = type === T.SENT_EN || type === T.SENT_PT ? this.sentenceOptions(word, theme, sent, distractors, type, pool) : Utils.shuffle([word, ...distractors]);
+    const q = new Question(word, type, options, retry);
     q.sentence = sent;
     return q;
   }
@@ -244,11 +309,12 @@ class Quiz {
   // Linha compacta para o registo do exercício (textos curtos, para ocupar pouco espaço)
   entry(q, given, ok) {
     const T = Question.TYPES, w = q.word, cut = s => String(s).slice(0, 70);
+    const opt = k => q.options.find(o => o.key === k) || this.dict.word(k), s = q.sentence;
     const text = o => ({ [T.EN_PT]: o.pt, [T.CTX]: o.pt, [T.IPA]: `/${o.ipa}/`, [T.SENT_PT]: o.exPt, [T.SENT_EN]: o.exEn })[q.type] ?? o.en;
-    const asked = { [T.EN_PT]: w.en, [T.IPA]: w.en, [T.PT_EN]: w.pt, [T.WRITE]: w.pt, [T.CTX]: w.exEn, [T.SENT_PT]: w.exEn, [T.SENT_EN]: w.exPt, [T.IPA_EN]: `/${w.ipa}/`, [T.WRITE_IPA]: `/${w.ipa}/` }[q.type]
+    const asked = { [T.EN_PT]: w.en, [T.IPA]: w.en, [T.PT_EN]: w.pt, [T.WRITE]: w.pt, [T.CTX]: s?.en || w.exEn, [T.SENT_PT]: s?.en || w.exEn, [T.SENT_EN]: s?.pt || w.exPt, [T.IPA_EN]: `/${w.ipa}/`, [T.WRITE_IPA]: `/${w.ipa}/` }[q.type]
       || (q.sentence?.en || w.exEn).replace(new RegExp(w.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), "___");
-    const mine = q.written ? given : text(this.dict.word(given));
-    return [cut(asked), cut(mine || "—"), cut([T.FILL, T.FILL_WRITE, T.WRITE_IPA, T.FILL_PT, T.FILL_WRITE_PT].includes(q.type) ? w.en : text(w)), ok];
+    const mine = q.written ? given : text(opt(given));
+    return [cut(asked), cut(mine || "—"), cut([T.FILL, T.FILL_WRITE, T.WRITE_IPA, T.FILL_PT, T.FILL_WRITE_PT].includes(q.type) ? w.en : text(opt(w.key))), ok];
   }
 
   get current() {

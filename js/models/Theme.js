@@ -23,13 +23,17 @@ class Theme {
     return this.words.find(w => w.en.toLowerCase() === text.toLowerCase());
   }
 
+  // Palavras que não se flexionam e que, com terminação, apanhavam outras (hi → his, Mr → Mrs)
+  static FIXED = new Set(["hi", "mr", "ok", "tv"]);
+
   // Expressão regular de uma palavra da lição. Aceita a primeira palavra flexionada:
   // study → studies/studied, bring up → brings up, make → makes/making
   static pattern(word) {
     const esc = Utils.escapeRegExp;
     const [first, ...rest] = word.split(" ");
     let head;
-    if (/[^aeiou]y$/i.test(first)) head = `${esc(first.slice(0, -1))}(?:y|ies|ied|ying)`;
+    if (Theme.FIXED.has(first.toLowerCase())) head = esc(first);
+    else if (/[^aeiou]y$/i.test(first)) head = `${esc(first.slice(0, -1))}(?:y|ies|ied|ying)`;
     else if (/e$/i.test(first)) head = `${esc(first.slice(0, -1))}(?:e|es|ed|ing)`;
     else head = `${esc(first)}(?:s|es|ed|d|ing)?`;
     const tail = rest.map((t, i) => (i === rest.length - 1 && /^[a-z]+$/i.test(t) ? `${esc(t)}(?:s|es)?` : esc(t)));

@@ -77,15 +77,15 @@ class QuizView extends View {
         area = this.writeForm(a);
         break;
       case T.CTX:
-        prompt = `<div class="eyebrow">O que significa “${this.esc(w.en)}” nesta frase?</div><p class="sentence">${Sentence.render(w.exEn, theme, null)}</p>`;
+        prompt = `<div class="eyebrow">O que significa “${this.esc(w.en)}” nesta frase?</div><p class="sentence">${Sentence.render(q.sentence?.en || w.exEn, theme, null)}</p>`;
         area = this.options(q, o => o.pt);
         break;
       case T.SENT_PT:
-        prompt = `<div class="eyebrow">Escolhe a tradução da frase</div><p class="sentence">${Sentence.render(w.exEn, theme, null)}</p>`;
+        prompt = `<div class="eyebrow">Escolhe a tradução da frase</div><p class="sentence">${Sentence.render(q.sentence?.en || w.exEn, theme, null)}</p>`;
         area = this.options(q, o => o.exPt);
         break;
       case T.SENT_EN:
-        prompt = `<div class="eyebrow">Como se diz em inglês?</div><div class="q" style="font-size:1.25rem">${this.esc(w.exPt)}</div>`;
+        prompt = `<div class="eyebrow">Como se diz em inglês?</div><div class="q" style="font-size:1.25rem">${this.esc(q.sentence?.pt || w.exPt)}</div>`;
         area = this.options(q, o => o.exEn);
         break;
       case T.IPA_EN:
@@ -119,11 +119,12 @@ class QuizView extends View {
 
   // Certo: pronúncia e tradução. Errado: a palavra certa, a tradução e a pronúncia
   feedback(w, a) {
+    const s = this.quiz.current.sentence || { en: w.exEn, pt: w.exPt };
     return `<div class="fb ${a.ok ? "ok" : "no"}">${a.ok ? "Certo!" : "Errado."}</div>
       <div class="answer">
         <div class="hw"><h3>${this.esc(w.en)}</h3><span class="ipa">/${this.esc(w.ipa)}/</span><span class="pos">${this.esc(w.pos)}</span></div>
         <div><span class="eyebrow">Tradução</span> <span class="pt">${this.esc(w.pt)}</span></div>
-        <div class="ex">${this.esc(w.exEn)}<br><i>${this.esc(w.exPt)}</i></div>
+        <div class="ex">${this.esc(s.en)}${s.pt ? `<br><i>${this.esc(s.pt)}</i>` : ""}</div>
       </div>
       <div class="row"><button class="btn" id="nextbtn" data-action="next">Continuar</button>${this.cambridgeLink(w)}</div>`;
   }

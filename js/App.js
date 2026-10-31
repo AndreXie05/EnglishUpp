@@ -14,6 +14,8 @@ class App {
     this.dictDrawer = new DictDrawer(this);
     this.main = document.getElementById("app");
     this.view = new HomeView(this);
+    this.seenCount = this.progress.todayCount; // exercícios de hoje já mostrados no contador
+    this.seenDay = DateUtils.today();
   }
 
   start() {
@@ -53,7 +55,6 @@ class App {
       teste: () => new TestView(this),
       escrita: () => new WritingView(this),
       textos: () => new TextsView(this),
-      misterios: () => new CasesView(this),
       frases: () => new PhrasesView(this),
       gramatica: () => new GrammarView(this),
       verbos: () => new VerbsView(this),
@@ -76,14 +77,23 @@ class App {
       this.progress.data.streakShown = today;
       Celebration.streak(this.progress.streak());
     }
+    this.tickCount();
     const lv = this.progress.level;
     const msgs = [];
     if (won.length) msgs.push(`Conquista: ${won.join(", ")}`);
-    if (done.length) msgs.push(`Missão cumprida: ${done.join(", ")}`);
+    if (done.length) Celebration.missions(done);
     if (lv > (this.progress.data.lvl || 1)) msgs.push(`Subiste ao nível ${lv}: ${Rank.title(lv)}!`);
     this.progress.data.lvl = lv;
     if (msgs.length) this.toast.show(msgs.join(" · "));
     this.storage.save(this.progress.toJSON());
+  }
+
+  // Depois de cada exercício novo: mostra um contador discreto (3/9) até a meta de hoje ser cumprida
+  tickCount() {
+    const p = this.progress, today = DateUtils.today(), n = p.todayCount;
+    if (this.seenDay !== today) { this.seenDay = today; this.seenCount = 0; }
+    if (n > this.seenCount && p.spun && n < p.goal) Celebration.tick(n, p.goal);
+    this.seenCount = n;
   }
 
   // Palavras de um exercício da lição: 20 no total, sorteadas de novo de cada vez.
