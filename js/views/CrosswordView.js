@@ -158,7 +158,7 @@ class CrosswordView extends View {
     this.done = [...this.cell.entries()].every(([k, x]) => this.fill[k] === x.ch);
     if (this.done) {
       this.xp = Math.max(3, 4 + this.words.length - this.reveals * 2);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "crossword");
       this.app.save();
     }
   }

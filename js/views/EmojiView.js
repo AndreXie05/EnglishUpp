@@ -65,7 +65,7 @@ class EmojiView extends View {
     if (this.i >= EmojiView.ROUNDS - 1) {
       this.state = "over";
       this.xp = this.correct + (this.correct === EmojiView.ROUNDS ? 3 : 0);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "emoji");
       this.app.save();
     } else { this.i++; this.loadQuestion(); }
   }

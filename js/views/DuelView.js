@@ -121,7 +121,7 @@ class DuelView extends View {
     d.played++;
     if (win) { d.wins++; d.streak++; d.best = Math.max(d.best, d.streak); } else if (!draw) d.streak = 0;
     this.xp = Math.max(2, this.right + (win ? 8 : draw ? 4 : 0));
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "duel");
     this.app.save();
   }
 

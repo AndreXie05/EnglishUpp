@@ -31,6 +31,12 @@ class GameView extends View {
     return all.filter(t => t.level === scope);
   }
 
+  // Frases inventadas (fora das lições) para os jogos de frases; seguem o nível escolhido, ou todas
+  static freeSentences(app) {
+    const scope = app.progress.data.gameScope || "all";
+    return FREE_SENTENCES.filter(([, , level]) => !/^[ABC][12]$/.test(scope) || level === scope).map(([en, pt]) => ({ en, pt }));
+  }
+
   static words(app) {
     return GameView.themes(app).flatMap(t => t.words);
   }
@@ -102,6 +108,7 @@ class GameView extends View {
           ["game", "tower", "🏗️", "Torre", "Sobe o mais alto que conseguires", 7],
           ["game", "chain", "🔗", "Cadeia de palavras", "A palavra seguinte começa na última letra", 6],
           ["game", "fix", "🛠️", "Corrige o erro", "Toca na palavra errada da frase", 8],
+          ["game", "dictation", "✍️", "Ditado", "Lê a frase e escreve-a de memória", 2],
           ["game", "quizshow", "💶", "Quem quer ser milionário", "15 perguntas, 3 ajudas", 7],
           ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
           ["vchallenge", "", "⏱️", "Verbos em 60 s", "Passados e particípios irregulares", 5],
@@ -183,7 +190,7 @@ class GameView extends View {
         this.app.show(new ChallengeView(this.app));
         return true;
       case "game": {
-        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, preps: PrepositionView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView };
+        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, preps: PrepositionView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView };
         this.app.show(new views[value](this.app));
         return true;
       }

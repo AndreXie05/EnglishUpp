@@ -56,7 +56,7 @@ class BombView extends View {
     this.boom = boom;
     this.xp = boom ? Math.min(10, Math.ceil(this.score / 2)) : Math.min(20, this.score);
     if (!boom) this.progress.data.bombBest = Math.max(this.score, this.progress.data.bombBest || 0);
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "bomb");
     this.app.save();
     this.app.render();
   }

@@ -48,6 +48,7 @@ class TextsView extends View {
     const band = Progress.band(this.progress.textScore(t.id, t.questions.length));
     const pill = best == null ? `<span class="pill">Novo</span>` : `<span class="schip ${band}">${best}/${t.questions.length}</span>`;
     return `<button class="theme tcard ${band}" style="--lc:${ThemesView.LEVEL_COLORS[t.level] || "var(--accent)"}" data-action="topen" data-v="${t.id}">
+      ${best != null ? `<span class="ribbon" aria-hidden="true">Feito</span>` : ""}
       <div class="row" style="justify-content:space-between;width:100%"><span class="ticon" aria-hidden="true">${TextsView.ICONS[t.kind] || "📄"}</span>${pill}</div>
       <span class="eyebrow tnum">${this.esc(t.kindLabel)} · ${t.level}</span>
       <span class="t">${this.esc(t.title)}</span><span class="muted" style="font-size:.9rem">${t.wordCount} palavras · ${t.questions.length} perguntas</span></button>`;

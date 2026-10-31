@@ -1,5 +1,5 @@
 // Verifica se todas as palavras usadas no site (textos, perguntas, frases de exemplo e leituras)
-// existem no dicionário. Se aparecerem palavras em falta, acrescenta-as a js/data/glossary.js
+// existem no dicionário. Se aparecerem palavras em falta, acrescenta-as ao ficheiro da letra certa em js/data/glossary/
 // (ou a uma lição) com IPA, classe e tradução.
 // Uso: node tools/check-words.js
 const fs = require("fs");

@@ -90,14 +90,13 @@ EnglishUpp/
 └── js/
     ├── main.js, App.js   startup and screen control
     ├── utils.js          helper functions (dates, text)
-    ├── data/             the content
-    │   ├── themes.js, themesA2.js, themesB1.js ... themesC2.js   the lessons (words)
-    │   ├── stories.js    reading texts and questions
-    │   ├── verbs.js      the main verbs and their forms
-    │   ├── grammar.js, grammarB–G.js   grammar lessons (A1–C2)
-    │   ├── texts.js, textsB-E.js                practical texts (TEXTS)
-    │   ├── glossary.js   support words (for the dictionary)
-    │   └── order.js      order of the lessons
+    ├── data/             the content, one folder per kind
+    │   ├── lessons/      themes.js, themesA2–C2.js (the lessons), stories.js (reading texts), order.js, wordExamples.js (word of the day)
+    │   ├── glossary/     support words for the dictionary, one file per letter range (AC, DG, HN, OR, S, TZ)
+    │   ├── grammar/      grammar.js, grammarB–G.js (grammar lessons A1–C2) and verbs.js (main verbs and forms)
+    │   ├── texts/        texts.js, textsB–G.js (practical texts), textsExtra.js (extra questions), clozetexts.js
+    │   ├── phrases/      phrases.js, phrases2.js (useful phrases) and phraseIpa.js (their pronunciation)
+    │   └── games/        adventures.js, crossclues.js, emojis.js, fixes.js, freeSentences.js
     ├── models/           Word, Theme, Dictionary, Progress, Quiz, MatchExercise,
     │                     SentenceBank, ErrorReview, TranslationTask, ProductionTask (OrderTask, WriteTask, ClozeTask), PracticalText, GrammarLesson, GrammarQuiz, Verb, VerbDrill
     ├── views/            one file per screen (Home, Themes, Lesson, Test, Quiz, Match,

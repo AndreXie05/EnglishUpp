@@ -42,7 +42,7 @@ class HomeView extends View {
   // Meta diária: a roleta decide quantos exercícios são precisos para a sequência subir hoje
   goalCard() {
     const p = this.progress;
-    const rules = `<span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto) e as perguntas de um texto, da lição ou do separador Textos. Ler as palavras e o mini-texto não conta. Cada exercício só conta uma vez por dia.</span>`;
+    const rules = `<span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto), as perguntas de um texto, cada jogo que acabas, as lições de gramática, o desafio do dia, os desafios de 60 segundos, os cartões, as conversas, a revisão dos erros, as traduções e o diário. Ler as palavras e o mini-texto não conta. Cada um só conta uma vez por dia.</span>`;
     if (!p.spun) {
       return `<section class="panel"><div class="eyebrow">Meta de hoje</div>
         <h2>Roda a roleta!</h2>
@@ -132,15 +132,11 @@ class HomeView extends View {
   wordOfDayCard() {
     const w = DailyFun.wordOfDay(this.app);
     if (!w) return "";
-    const done = this.progress.data.wod === DateUtils.today();
-    const form = done
-      ? `<div class="fb ok">Boa! Já fizeste a palavra de hoje.</div>`
-      : `<form id="wodform" class="row" style="width:100%"><input id="wodin" class="search" style="flex:1;min-width:180px" autocomplete="off" spellcheck="false" placeholder="Escreve uma frase com “${this.esc(w.en)}”" aria-label="Frase com a palavra do dia"><button class="btn small" type="submit">Verificar</button></form>`;
-    return `<section class="panel wod"><div class="eyebrow">Palavra do dia · +5 XP</div>
+    const ex = DailyFun.examples(this.app, w).map(e => `<div class="ex">${this.esc(e.en)}${e.pt ? `<br><i>${this.esc(e.pt)}</i>` : ""}</div>`).join("");
+    return `<section class="panel wod"><div class="eyebrow">Palavra do dia</div>
       <div class="hw"><h2>${this.esc(w.en)}</h2><span class="ipa">/${this.esc(w.ipa)}/</span><span class="pos">${this.esc(w.pos)}</span></div>
       <div class="pt" style="font-weight:700">${this.esc(w.pt)}</div>
-      <div class="ex">${this.esc(w.exEn)}<br><i>${this.esc(w.exPt)}</i></div>
-      ${form}${this.wodMsg ? `<div class="fb ${this.wodMsg.ok ? "ok" : "no"}">${this.esc(this.wodMsg.text)}</div>` : ""}${this.cambridgeLink(w)}</section>`;
+      ${ex}${this.cambridgeLink(w)}</section>`;
   }
 
   dailyChallengeCard() {
@@ -161,20 +157,6 @@ class HomeView extends View {
       <div class="stats"><div class="stat"><b>${w.days}/7</b><span>dias de meta</span></div><div class="stat"><b>${w.right}</b><span>respostas certas</span></div><div class="stat"><b>${w.lessons}</b><span>lições novas</span></div><div class="stat"><b>${w.xp}</b><span>XP</span></div></div>
       <div class="wbars" aria-hidden="true">${bars}</div>
       <p class="muted" style="margin:0">${trend}${w.xp ? ` Melhor dia: ${this.esc(DateUtils.format(w.best.d))} (${w.best.xp} XP).` : ""}</p></section>`;
-  }
-
-  onSubmit(form) {
-    if (form.id !== "wodform") return false;
-    const w = DailyFun.wordOfDay(this.app), text = document.getElementById("wodin").value;
-    if (DailyFun.usesWord(text, w)) {
-      const first = this.progress.doneWordOfDay();
-      this.wodMsg = { ok: true, text: first ? "Frase aceite! +5 XP" : "Frase aceite!" };
-      this.app.save();
-    } else {
-      this.wodMsg = { ok: false, text: `Usa a palavra “${w.en}” numa frase com pelo menos 4 palavras.` };
-    }
-    this.app.render();
-    return true;
   }
 
   onAction(action, value) {

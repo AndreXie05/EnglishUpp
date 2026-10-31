@@ -1,4 +1,4 @@
-// Verifica os textos de "Completar o texto" (js/data/clozetexts.js):
+// Verifica os textos de "Completar o texto" (js/data/texts/clozetexts.js):
 // 1) as palavras que ficam em branco são sempre da própria lição ou de anteriores (o resto do texto pode ter palavras
 //    de lições à frente, que se procuram no dicionário; só avisa se forem mais de MAX_AHEAD do texto);
 // 2) tem pelo menos MIN palavras da lição para ficarem em branco;
@@ -59,6 +59,6 @@ out.forEach(r => {
   console.log(`Lição ${r.lesson} (${r.id}): ${r.count} textos`);
   r.problems.forEach(p => { console.log("   ✗ " + p); bad++; });
 });
-if (!out.length) console.log("Ainda não há textos em js/data/clozetexts.js.");
+if (!out.length) console.log("Ainda não há textos em js/data/texts/clozetexts.js.");
 console.log(bad ? `\n${bad} problema(s).` : "\nTudo certo.");
 process.exitCode = bad ? 1 : 0;

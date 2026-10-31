@@ -58,7 +58,7 @@ class FixView extends View {
     if (this.i >= FixView.ROUNDS - 1) {
       this.state = "over";
       this.xp = this.correct + (this.correct === FixView.ROUNDS ? 3 : 0);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "fix");
       this.app.save();
     } else { this.i++; this.load(); }
   }

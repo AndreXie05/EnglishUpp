@@ -89,7 +89,7 @@ class BingoView extends View {
   finish(bingo) {
     this.bingo = bingo;
     this.xp = bingo ? 5 + Math.max(0, 8 - this.mistakes) : 2;
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "bingo");
     this.app.save();
   }
 

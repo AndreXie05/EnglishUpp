@@ -70,7 +70,7 @@ class OddView extends View {
     if (this.i >= OddView.ROUNDS - 1) {
       this.state = "over";
       this.xp = this.correct + (this.correct === OddView.ROUNDS ? 3 : 0);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "odd");
       this.app.save();
     } else { this.i++; this.loadRound(); }
   }

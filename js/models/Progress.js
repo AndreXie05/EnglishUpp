@@ -64,6 +64,7 @@ class Progress {
     this.data.grammar[id] = Math.max(percent, this.data.grammar[id] || 0);
     this.addXp(percent >= 80 ? 15 : 5);
     this.bump("grammar");
+    this.exerciseDone(`grammar:${id}`);
     const g = this.data.gsr[id] || { box: 0 };
     g.box = percent >= 80 ? Math.min(g.box + 1, Progress.INTERVALS.length - 1) : 0;
     g.due = DateUtils.addDays(DateUtils.today(), Progress.INTERVALS[g.box]);
@@ -208,6 +209,7 @@ class Progress {
 
   // Melhor resultado (%) no exame final de um nível
   addExam(level, percent) {
+    this.exerciseDone(`exam:${level}`);
     this.addXp(!this.examPassed(level) && percent >= LevelExam.PASS ? 30 : 3);
     this.data.exams[level] = Math.max(percent, this.data.exams[level] || 0);
   }
@@ -344,6 +346,7 @@ class Progress {
     this.purgeRounds();
     this.data.rounds.push({ at: Date.now(), date: DateUtils.today(), ...round });
     this.addXp(round.correct || 0);
+    this.exerciseDone("translate");
   }
 
   weekRounds() {
@@ -393,9 +396,11 @@ class Progress {
   }
 
   // Jogos pequenos (forca, memória, frases): contam para as missões
-  addGame(xp) {
+  // id: o jogo, que conta para a meta diária (uma vez por dia)
+  addGame(xp, id = null) {
     this.addXp(xp);
     this.bump("games");
+    if (id) this.exerciseDone(`game:${id}`);
   }
 
   // Conversa ou história acabada: 2 XP por resposta certa (+5 se acertaste tudo); só dá XP uma vez por dia e por cenário
@@ -405,6 +410,7 @@ class Progress {
     r.best = Math.max(r.best, pct);
     r.plays++;
     this.bump("games");
+    this.exerciseDone(`adv:${id}`);
     if (r.day === DateUtils.today()) return 0;
     r.day = DateUtils.today();
     const xp = score * 2 + (total && score === total ? 5 : 0);
@@ -451,6 +457,7 @@ class Progress {
   // Desafio do dia: 8 XP à primeira vez que o acabas hoje (com 60% ou mais)
   addDaily(percent) {
     const today = DateUtils.today();
+    this.exerciseDone("daily");
     if (this.data.daily?.date !== today) {
       this.data.daily = { date: today, best: percent };
       if (percent >= 60) this.addXp(8);
@@ -458,17 +465,9 @@ class Progress {
     } else this.data.daily.best = Math.max(this.data.daily.best, percent);
   }
 
-  // Palavra do dia: 5 XP à primeira frase certa de cada dia
-  doneWordOfDay() {
-    const today = DateUtils.today();
-    if (this.data.wod === today) return false;
-    this.data.wod = today;
-    this.addXp(5);
-    return true;
-  }
-
   // Revisão dos erros (palavras, gramática ou textos) acabada
   addReview(percent) {
+    this.exerciseDone("review");
     if (percent >= 60) this.addXp(3);
     this.bump("review");
   }
@@ -484,6 +483,7 @@ class Progress {
     const xp = correct;
     this.addXp(xp);
     this.bump("timed");
+    this.exerciseDone(`challenge:${bestKey}`);
     this.data[bestKey] = Math.max(correct, this.data[bestKey] || 0);
     return xp;
   }
@@ -495,6 +495,7 @@ class Progress {
     this.addXp(xp);
     this.bump("cardxp", xp);
     this.bump("cards", cards);
+    if (cards > 0) this.exerciseDone("flash");
     return xp;
   }
 
@@ -515,6 +516,7 @@ class Progress {
   addDiary(text, issues) {
     this.data.diary.push({ date: DateUtils.today(), text, issues });
     this.data.diary = this.data.diary.slice(-20);
+    this.exerciseDone("diary");
     if (this.day().diary) return 0;
     this.addXp(5);
     this.bump("diary");

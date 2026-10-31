@@ -1,4 +1,4 @@
-// Frase embaralhada: ordenar as palavras de uma frase dos teus exemplos
+// Frase embaralhada: ordenar as palavras de uma frase (exemplos das lições e frases inventadas)
 class ScrambleView extends View {
   static ROUNDS = 5;
 
@@ -6,7 +6,7 @@ class ScrambleView extends View {
     super(app);
     const themes = GameView.themes(this.app);
     const ok = s => { const n = s.en.split(" ").length; return n >= 4 && n <= 9; };
-    this.items = Utils.shuffle(themes.flatMap(t => this.app.sentences.sentences(t.id)).filter(ok)).slice(0, ScrambleView.ROUNDS);
+    this.items = Utils.shuffle([...themes.flatMap(t => this.app.sentences.sentences(t.id)), ...GameView.freeSentences(app), ...GameView.freeSentences(app)].filter(ok)).slice(0, ScrambleView.ROUNDS);
     this.index = 0;
     this.score = 0;
     this.xp = 0;
@@ -68,7 +68,7 @@ class ScrambleView extends View {
         this.index++;
         if (this.finished) {
           if (this.score === this.items.length) this.xp += 3;
-          this.progress.addGame(this.xp);
+          this.progress.addGame(this.xp, "scramble");
           this.app.save();
         } else this.setup();
         break;

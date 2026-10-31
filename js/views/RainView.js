@@ -163,7 +163,7 @@ class RainView extends View {
     this.state = "over";
     this.xp = Math.min(25, this.score);
     this.progress.data.rainBest = Math.max(this.score, this.progress.data.rainBest || 0);
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "rain");
     this.app.save();
     this.app.render();
   }

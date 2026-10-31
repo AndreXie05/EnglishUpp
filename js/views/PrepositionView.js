@@ -85,7 +85,7 @@ class PrepositionView extends View {
     this.picked = null;
     if (this.finished) {
       this.xp = this.score + (this.score === this.rounds.length ? 3 : 0);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "preposition");
       this.app.save();
     }
   }

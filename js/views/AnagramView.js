@@ -80,7 +80,7 @@ class AnagramView extends View {
     this.state = "over";
     this.xp = Math.min(20, this.score);
     this.progress.data.anagramBest = Math.max(this.score, this.progress.data.anagramBest || 0);
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "anagram");
     this.app.save();
     this.app.render();
   }

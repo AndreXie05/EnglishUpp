@@ -46,7 +46,7 @@ class TowerView extends View {
     this.win = win;
     this.xp = Math.min(25, Math.ceil(this.floors / 2) + (win ? 5 : 0));
     this.progress.data.towerBest = Math.max(this.peak, this.progress.data.towerBest || 0);
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "tower");
     this.app.save();
   }
 

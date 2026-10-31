@@ -33,7 +33,8 @@ class DailyFun {
   /* ----- palavra do dia ----- */
 
   static wordOfDay(app) {
-    const list = DailyFun.pool(app).filter(w => !w.en.includes(" ")).sort((a, b) => a.key.localeCompare(b.key));
+    // Qualquer palavra solta de qualquer lição, estudada ou não
+    const list = app.dict.allWords.filter(w => !w.en.includes(" ")).sort((a, b) => a.key.localeCompare(b.key));
     return list.length ? list[DailyFun.dayHash(1) % list.length] : null;
   }
 
@@ -41,12 +42,31 @@ class DailyFun {
     return (DateUtils.dayNumber() * 2654435761 + salt * 40503) >>> 0;
   }
 
-  // A frase tem a palavra (ou a sua forma com -s/-ed/-ing) e pelo menos 4 palavras?
-  static usesWord(sentence, word) {
-    const words = sentence.trim().split(/\s+/).filter(Boolean);
-    if (words.length < 4) return false;
+  // Frases de apoio para os exemplos: [{ en, pt }] com tradução (frases das lições) e [{ en }] sem ela (histórias e textos)
+  static sentenceBank(app) {
+    if (DailyFun._bank) return DailyFun._bank;
+    const split = t => (t.match(/[^.!?]+[.!?]+["”]?/g) || []).map(x => x.trim()).filter(x => { const n = x.split(/\s+/).length; return n >= 5 && n <= 16; });
+    const withPt = app.dict.themes.flatMap(t => [...t.text, ...t.words.map(w => ({ en: w.exEn, pt: w.exPt }))]);
+    const plain = [
+      ...Object.values(STORIES).flatMap(s => (s.paragraphs || []).flatMap(split)),
+      ...TEXTS.flatMap(t => t.lines.filter(l => !PracticalText.isHeader(l)).flatMap(split)),
+    ].map(en => ({ en }));
+    return (DailyFun._bank = { withPt, plain });
+  }
+
+  // Dois exemplos da palavra do dia: frases novas de WORD_EXAMPLES; se a palavra não tiver, o da própria lição e outro, fixo para o dia (com tradução se houver)
+  static examples(app, word) {
+    const own = typeof WORD_EXAMPLES !== "undefined" && WORD_EXAMPLES[word.en];
+    if (own) return own.map(([en, pt]) => ({ en, pt }));
     const stem = word.en.toLowerCase().replace(/e$/, "");
-    return words.some(t => t.toLowerCase().replace(/[^a-z']/g, "").startsWith(stem));
+    const has = s => (s.en.toLowerCase().match(/[a-z']+/g) || []).some(t => t.startsWith(stem));
+    const bank = DailyFun.sentenceBank(app);
+    const first = { en: word.exEn, pt: word.exPt };
+    for (const list of [bank.withPt, bank.plain]) {
+      const found = list.filter(s => s.en !== word.exEn && has(s));
+      if (found.length) return [first, found[DailyFun.dayHash(2) % found.length]];
+    }
+    return [first];
   }
 
   /* ----- desafio do dia ----- */

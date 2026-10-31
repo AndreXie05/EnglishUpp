@@ -95,10 +95,11 @@ class MysteryView extends View {
     this.msg = "";
     if (this.won) {
       this.xp = 2 + (MysteryView.TRIES - this.guesses.length);
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "mystery");
       this.app.save();
     } else if (this.lost) {
       this.progress.bump("games");
+      this.progress.exerciseDone("game:mystery");
       this.app.save();
     }
   }

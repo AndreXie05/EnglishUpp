@@ -70,7 +70,7 @@ class HangmanView extends View {
     if (!this.word.en.includes(value)) this.lives--;
     if (this.won) {
       this.xp = 2 + this.lives;
-      this.progress.addGame(this.xp);
+      this.progress.addGame(this.xp, "hangman");
       this.app.save();
     } else if (this.lost) {
       this.progress.bump("games");

@@ -1,4 +1,4 @@
-// Gera js/data/phraseIpa.js: a pronúncia (IPA) de cada frase de PHRASES, palavra a palavra.
+// Gera js/data/phrases/phraseIpa.js: a pronúncia (IPA) de cada frase de PHRASES, palavra a palavra.
 // Usa o IPA do dicionário; as palavras que não estão lá (palavras funcionais, formas flexionadas,
 // contracções) vêm de tools/phrase-ipa-words.js. Se faltar alguma, lista-as e não escreve nada.
 // Uso: node tools/build-phrase-ipa.js
@@ -8,7 +8,7 @@ const vm = require("vm");
 
 const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const scripts = [...html.matchAll(/src="(js\/[^"]+)"/g)].map(m => m[1]).filter(s => s !== "js/main.js" && s !== "js/data/phraseIpa.js");
+const scripts = [...html.matchAll(/src="(js\/[^"]+)"/g)].map(m => m[1]).filter(s => s !== "js/main.js" && s !== "js/data/phrases/phraseIpa.js");
 const ctx = vm.createContext({ console });
 scripts.forEach(s => vm.runInContext(fs.readFileSync(path.join(root, s), "utf8"), ctx, { filename: s }));
 const extra = require("./phrase-ipa-words.js");
@@ -30,7 +30,7 @@ if (missing.size) {
   process.exitCode = 1;
 } else {
   const body = Object.entries(out).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join("\n");
-  fs.writeFileSync(path.join(root, "js/data/phraseIpa.js"),
+  fs.writeFileSync(path.join(root, "js/data/phrases/phraseIpa.js"),
     `// Pronúncia (IPA) de cada frase de PHRASES, palavra a palavra. Gerado por tools/build-phrase-ipa.js: não editar à mão.\nconst PHRASE_IPA = {\n${body}\n};\n`);
   console.log(`${Object.keys(out).length} frases com pronúncia.`);
 }

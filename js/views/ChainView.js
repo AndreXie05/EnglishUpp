@@ -6,13 +6,10 @@ class ChainView extends View {
   constructor(app) {
     super(app);
     this.state = "intro";
-    const seen = new Set();
-    const ok = list => list.filter(w => /^[a-z]{2,10}$/.test(w.en) && !seen.has(w.en) && seen.add(w.en));
-    this.pool = ok(GameView.words(app));
-    // Poucos temas: a cadeia ficava curta demais, por isso usa palavras de todos os temas
-    this.wide = this.pool.length < 150;
-    if (this.wide) { seen.clear(); this.pool = ok(app.dict.themes.flatMap(t => t.words)); }
+    // Todas as palavras soltas do dicionário (sem nomes próprios nem expressões)
+    this.pool = app.dict.entries.filter(e => /^[a-z]{2,14}$/.test(e.en));
     this.byEn = new Map(this.pool.map(w => [w.en, w]));
+    this.easy = this.pool.filter(w => w.lesson && w.en.length <= 8);
   }
 
   get tab() { return "jogo"; }
@@ -26,24 +23,46 @@ class ChainView extends View {
     this.hints = 0;
     this.mine = 0;
     this.xp = 0;
-    const start = Utils.pick(this.pool.filter(w => w.en.length >= 3 && w.en.length <= 6 && this.next(w.en).length));
+    const start = this.varied(this.easy.filter(w => w.en.length >= 3 && w.en.length <= 6 && this.next(w.en).length));
     this.chain.push({ who: "pc", w: start });
   }
 
   usedSet() { return new Set(this.chain.map(c => c.w.en)); }
 
   // Palavras possíveis a seguir a uma palavra
-  next(word, used = this.usedSet()) {
+  next(word, used = this.usedSet(), pool = this.pool) {
     const c = word.at(-1);
-    return this.pool.filter(w => w.en[0] === c && !used.has(w.en));
+    return pool.filter(w => w.en[0] === c && !used.has(w.en));
+  }
+
+  // Palavra que o computador escolhe: de preferência uma palavra de lição, curta e conhecida
+  pcPick(word) {
+    const easy = this.next(word, this.usedSet(), this.easy);
+    return this.varied(easy.length ? easy : this.next(word));
+  }
+
+  // Escolhe a última letra à sorte (e não a palavra), senão E, Y, S e T saíam quase sempre.
+  // Só entram letras que ainda têm pelo menos 3 palavras a seguir, para a cadeia não acabar logo.
+  varied(words) {
+    const used = this.usedSet(), by = new Map();
+    words.forEach(w => by.set(w.en.at(-1), [...(by.get(w.en.at(-1)) || []), w]));
+    const open = [...by.keys()].filter(c => this.next(c, used).length >= 3);
+    return Utils.pick(by.get(open.length ? Utils.pick(open) : Utils.pick([...by.keys()])));
+  }
+
+  // A palavra escrita no dicionário, ou o plural regular de uma palavra que lá está (cats → cat)
+  lookup(w) {
+    const direct = this.byEn.get(w);
+    if (direct) return direct;
+    const base = [w.replace(/ies$/, "y"), w.replace(/es$/, ""), w.replace(/s$/, "")].find(b => b !== w && this.byEn.has(b));
+    return base ? { ...this.byEn.get(base), en: w, ipa: "" } : null;
   }
 
   get last() { return this.chain.at(-1).w; }
 
   render() {
-    if (this.pool.length < 30) return GameView.needWords("Cadeia de palavras");
     if (this.state === "intro") return `<div><div class="eyebrow">Jogo</div><h1>Cadeia de palavras 🔗</h1></div>
-      <section class="panel" style="text-align:center"><p style="margin:0">O computador diz uma palavra. Tu dizes outra que <b>comece na última letra</b> da anterior (por exemplo <i>cat → tree → egg</i>), com palavras dos temas do Jogo. Chega a ${ChainView.GOAL} palavras tuas para ganhar. Podes pedir dicas.</p>${this.wide ? `<p class="muted" style="margin:0">Os temas escolhidos têm poucas palavras, por isso este jogo usa palavras de todos os temas.</p>` : ""}
+      <section class="panel" style="text-align:center"><p style="margin:0">O computador diz uma palavra. Tu dizes outra que <b>comece na última letra</b> da anterior (por exemplo <i>cat → tree → egg</i>), com qualquer palavra do Dicionário (não vale repetir palavras já usadas). Chega a ${ChainView.GOAL} palavras tuas para ganhar. Podes pedir dicas.</p>
         <div class="row" style="justify-content:center"><button class="btn" data-action="chainstart">Começar</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
     if (this.state === "over") return `<div><div class="eyebrow">Fim</div><h1>${this.won ? "🏆 Ganhaste!" : `${this.mine} palavra${this.mine === 1 ? "" : "s"}`}</h1></div>
       <section class="panel"><p style="margin:0">${this.why} Ganhaste ${this.xp} XP.</p>
@@ -62,18 +81,18 @@ class ChainView extends View {
   }
 
   chips() {
-    return this.chain.map(c => `<span class="chip ${c.who}"><b>${this.esc(c.w.en)}</b> <small>${this.esc(c.w.pt)}</small></span>`).join('<span class="chainarrow">→</span>');
+    return this.chain.map(c => `<span class="chip ${c.who}"><b>${this.esc(c.w.en)}</b>${c.w.ipa ? `<small class="ipa" style="font-size:.85rem">/${this.esc(c.w.ipa)}/</small>` : ""}<small>${this.esc(c.w.pt)}</small></span>`).join('<span class="chainarrow">→</span>');
   }
 
-  type(c) { if (this.typed.length < 10) { this.typed += c; this.msg = ""; } }
+  type(c) { if (this.typed.length < 14) { this.typed += c; this.msg = ""; } }
 
   submit() {
     const w = this.typed, need = this.last.en.at(-1);
     if (w.length < 2) { this.msg = "Escreve uma palavra."; return; }
     if (w[0] !== need) { this.msg = `Tem de começar por “${need.toUpperCase()}”.`; return; }
     if (this.usedSet().has(w)) { this.msg = "Essa palavra já foi usada."; return; }
-    const word = this.byEn.get(w);
-    if (!word) { this.msg = "Essa palavra não está nos temas escolhidos."; return; }
+    const word = this.lookup(w);
+    if (!word) { this.msg = "Não encontrei essa palavra no Dicionário. Confirma a escrita."; return; }
     this.chain.push({ who: "me", w: word });
     this.mine++;
     this.typed = "";
@@ -81,7 +100,7 @@ class ChainView extends View {
     if (this.mine >= ChainView.GOAL) return this.finish(true, "Fizeste a cadeia toda!");
     const opts = this.next(word.en);
     if (!opts.length) return this.finish(true, "O computador já não sabe nenhuma palavra!");
-    this.chain.push({ who: "pc", w: Utils.pick(opts) });
+    this.chain.push({ who: "pc", w: this.pcPick(word.en) });
     if (!this.next(this.last.en).length) this.finish(true, "O computador pôs uma palavra sem continuação: ganhaste!");
   }
 
@@ -90,13 +109,13 @@ class ChainView extends View {
     this.won = won;
     this.why = why;
     this.xp = Math.max(this.mine ? 1 : 0, this.mine + (won ? 4 : 0) - Math.min(this.hints, this.mine));
-    if (this.mine) { this.progress.addGame(this.xp); this.app.save(); }
+    if (this.mine) { this.progress.addGame(this.xp, "chain"); this.app.save(); }
   }
 
   hint() {
     const opts = this.next(this.last.en);
     if (!opts.length) return;
-    const w = Utils.pick(opts);
+    const w = this.pcPick(this.last.en);
     this.hints++;
     this.msg = `Dica: “${w.pt}” (${w.en.length} letras, começa por ${w.en[0].toUpperCase()}).`;
   }

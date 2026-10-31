@@ -107,7 +107,7 @@ class QuizShowView extends View {
     this.won = won;
     this.xp = correct + (won ? 10 : 0);
     this.progress.data.quizShowBest = Math.max(final, this.progress.data.quizShowBest || 0);
-    this.progress.addGame(this.xp);
+    this.progress.addGame(this.xp, "quizshow");
     this.app.save();
   }
 

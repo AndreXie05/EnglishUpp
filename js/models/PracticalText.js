@@ -1,5 +1,6 @@
 // Um texto prático (diálogo, email, carta, aviso...) com perguntas de compreensão.
 // Dados em TEXTS: { id, level, kind, title, lines: [...], q: [[pergunta, certa, errada, errada], ...] }
+// Os textos longos recebem perguntas a mais de TEXT_EXTRA_Q (textsExtra.js).
 // Nos diálogos cada linha é "Nome: fala". Nos emails e cartas as linhas "From:", "To:", "Subject:" e "Date:" são o cabeçalho
 // e uma linha vazia separa os parágrafos.
 class PracticalText {
@@ -10,7 +11,8 @@ class PracticalText {
 
   constructor(raw) {
     Object.assign(this, { id: raw.id, level: raw.level, kind: raw.kind, title: raw.title, lines: raw.lines });
-    this.questions = raw.q.map(([q, right, ...wrong]) => {
+    const extra = typeof TEXT_EXTRA_Q !== "undefined" ? TEXT_EXTRA_Q[raw.id] || [] : [];
+    this.questions = [...raw.q, ...extra].map(([q, right, ...wrong]) => {
       const options = Utils.shuffle([right, ...wrong]);
       return { q, options, answer: options.indexOf(right) };
     });
