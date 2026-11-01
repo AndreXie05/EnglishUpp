@@ -96,7 +96,6 @@ class GameView extends View {
           ["game", "scramble", "🧩", "Frases", "Põe as palavras na ordem certa", 3],
           ["adventures", "", "🎭", "Conversas e histórias", "Escolhe o que dizer e muda o final", 6],
           ["game", "mystery", "🔤", "Palavra misteriosa", "Adivinha a palavra em 6 tentativas", 2],
-          ["game", "preps", "📍", "Preposições", "Onde está o objeto? in, on, under…", 5],
           ["game", "rain", "🌧️", "Chuva de palavras", "Toca na tradução antes de cair", 1],
           ["game", "anagram", "🔀", "Anagramas", "Ordena as letras contra o relógio", 4],
           ["game", "bingo", "🎱", "Bingo de palavras", "Faz uma linha com as traduções", 8],
@@ -111,7 +110,7 @@ class GameView extends View {
           ["game", "dictation", "✍️", "Ditado", "Lê a frase e escreve-a de memória", 2],
           ["game", "quizshow", "💶", "Quem quer ser milionário", "15 perguntas, 3 ajudas", 7],
           ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
-          ["vchallenge", "", "⏱️", "Verbos em 60 s", "Passados e particípios irregulares", 5],
+          ["vchallenge", "", "⏱️", "Verbos em 60 s", "Irregulares em todos os tempos", 5],
           ["hardwords", "", "🎯", "Palavras difíceis", "As que mais erras, com dicas", 6],
           ["nav", "teste", "🔁", "Treino de erros", errors ? "Revê o que ainda falhas" : "Ainda sem erros por rever", 8],
         ].map(([act, v, icon, name, desc, c]) => `<button class="gcard g${c}" data-action="${act}"${v ? ` data-v="${v}"` : ""}>
@@ -190,7 +189,7 @@ class GameView extends View {
         this.app.show(new ChallengeView(this.app));
         return true;
       case "game": {
-        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, preps: PrepositionView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView };
+        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView };
         this.app.show(new views[value](this.app));
         return true;
       }

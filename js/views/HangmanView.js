@@ -51,7 +51,8 @@ class HangmanView extends View {
       <section class="panel" style="gap:16px;text-align:center"><div class="eyebrow">Significa “${this.esc(w.pt)}” (${this.esc(w.pos)}) · ${w.en.length} letras</div><div class="ipa" style="font-size:1.2rem">/${this.esc(w.ipa)}/ · clica nas letras ou escreve no teclado</div>
         ${this.figure()}
         <div class="q" style="letter-spacing:.15em;text-align:center">${shown}</div>
-        <div class="keys">${keys}</div>${end}</section>`;
+        <div class="keys">${keys}</div>
+        ${over || this.lives <= 1 ? "" : `<div class="row" style="justify-content:center"><button class="btn ghost small" data-action="hhint">💡 Mostrar uma letra (custa uma vida)</button></div>`}${end}</section>`;
   }
 
   onKey(e) {
@@ -64,6 +65,13 @@ class HangmanView extends View {
       this.start();
       this.app.render();
       return true;
+    }
+    if (action === "hhint") {
+      // Dica: revela uma letra que falta, mas custa uma vida
+      const missing = [...new Set(this.word.en)].filter(c => !this.guessed.has(c));
+      if (this.won || this.lost || this.lives <= 1 || !missing.length) return true;
+      this.lives--;
+      return this.onAction("hletter", Utils.pick(missing));
     }
     if (action !== "hletter" || this.won || this.lost || this.guessed.has(value)) return action === "hletter";
     this.guessed.add(value);

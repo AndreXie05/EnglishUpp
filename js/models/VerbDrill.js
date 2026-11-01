@@ -1,16 +1,21 @@
 // Treino de verbos: cada vez que se pede os exercícios saem perguntas novas e diferentes.
 // Tem a mesma forma de uma lição de gramática, por isso usa o GrammarQuiz e o GrammarQuizView.
 class VerbDrill {
-  constructor(verbs, count = 15) {
-    this.id = "verbs";
-    this.pt = verbs.length === 1 ? `Verbo ${verbs[0].base}` : "Treino de verbos";
+  // tense: treina só um tempo (present, past…); sem ele, todos misturados
+  constructor(verbs, count = 15, tense = null) {
+    this.id = tense ? `verbs-${tense}` : "verbs";
+    this.pt = tense ? `Treino: ${Verb.TENSES.find(([t]) => t === tense)[1]}` : verbs.length === 1 ? `Verbo ${verbs[0].base}` : "Treino de verbos";
     this.verbs = verbs;
     this.count = count;
+    this.tense = tense;
     this.backLabel = "Voltar aos verbos";
   }
 
   back(app) {
-    app.show(new VerbsView(app, this.verbs.length === 1 ? this.verbs[0] : null));
+    const view = new VerbsView(app, this.verbs.length === 1 ? this.verbs[0] : null, this.tense ? "tenses" : null);
+    // Volta à página do tempo que se treinou
+    if (this.tense) view.step = TENSE_GUIDE.findIndex(g => g.tense === this.tense) + 1;
+    app.show(view);
   }
 
   get exercises() {
@@ -23,19 +28,26 @@ class VerbDrill {
   }
 
   // [tipo, frase, resposta, opções erradas, dica, explicação]
+  // Todos os tempos (presente, passado, futuro, present perfect, contínuo) e o particípio saem com a mesma frequência
   question(v) {
-    const why = `${v.base} · ${v.third} · ${v.ing} · ${v.past} · ${v.participle}`;
-    const kind = Utils.pick(["past", "pp", "tense", "tense", "choose"]);
-    const [label, pron] = Utils.pick(Verb.PRONOUNS);
-    const [tense, tenseName] = Utils.pick(Verb.TENSES);
-    if (kind === "past") return ["w", `Passado simples de "${v.base}": ___`, v.pasts.join("/"), "", v.pt, why];
-    if (kind === "pp") return ["w", `Particípio passado de "${v.base}": ___`, v.participles.join("/"), "", v.pt, why];
-    if (kind === "tense") {
-      return ["w", `${label} ___ (${v.base})`, v.answers(tense, pron).join("/"), "", `${tenseName} · ${v.pt}`, why];
+    const forms = `${v.base} · ${v.third} · ${v.ing} · ${v.past} · ${v.participle}`;
+    const written = Utils.pick([true, false]);
+    if (!this.tense && Utils.pick(Verb.TENSES.concat([["pp"]]))[0] === "pp") {
+      const valid = v.participles;
+      const wrong = [...new Set(v.forms)].filter(f => !valid.includes(f));
+      return written
+        ? ["w", `Particípio passado de "${v.base}": ___`, valid.join("/"), "", v.pt, forms]
+        : ["c", `Particípio passado de "${v.base}": ___`, valid[0], Utils.shuffle(wrong).slice(0, 3).join("|"), v.pt, forms];
     }
-    const isPast = Utils.pick([true, false]);
-    const valid = isPast ? v.pasts : v.participles;
-    const wrong = [...new Set(v.forms)].filter(f => !valid.includes(f));
-    return ["c", `${isPast ? "Passado simples" : "Particípio passado"} de "${v.base}": ___`, valid[0], Utils.shuffle(wrong).slice(0, 3).join("|"), v.pt, why];
+    const [label, pron] = Utils.pick(Verb.PRONOUNS);
+    const [tense, tenseName] = this.tense ? Verb.TENSES.find(([t]) => t === this.tense) : Utils.pick(Verb.TENSES);
+    const valid = v.answers(tense, pron);
+    // Depois de responder, lembra a regra do tempo e as formas do verbo
+    const rule = TENSE_GUIDE.find(g => g.tense === tense).rule;
+    const why = `${tenseName} = ${rule}. Formas: ${forms}`;
+    if (written) return ["w", `${label} ___ (${v.base})`, valid.join("/"), "", `${tenseName} · ${v.pt}`, why];
+    // Opções erradas: o mesmo verbo e a mesma pessoa noutros tempos (went, will go, has gone…)
+    const wrong = [...new Set(Verb.TENSES.map(([t]) => v.form(t, pron)))].filter(f => !valid.includes(f));
+    return ["c", `${label} ___ (${v.base}) · ${tenseName}`, valid[0], Utils.shuffle(wrong).slice(0, 3).join("|"), v.pt, why];
   }
 }

@@ -1,6 +1,6 @@
 // Gera js/data/phrases/phraseIpa.js: a pronúncia (IPA) de cada frase de PHRASES, palavra a palavra.
 // Usa o IPA do dicionário; as palavras que não estão lá (palavras funcionais, formas flexionadas,
-// contracções) vêm de tools/phrase-ipa-words.js. Se faltar alguma, lista-as e não escreve nada.
+// contracções) vêm de js/data/phrases/wordIpa.js. Se faltar alguma, lista-as e não escreve nada.
 // Uso: node tools/build-phrase-ipa.js
 const fs = require("fs");
 const path = require("path");
@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scripts = [...html.matchAll(/src="(js\/[^"]+)"/g)].map(m => m[1]).filter(s => s !== "js/main.js" && s !== "js/data/phrases/phraseIpa.js");
 const ctx = vm.createContext({ console });
 scripts.forEach(s => vm.runInContext(fs.readFileSync(path.join(root, s), "utf8"), ctx, { filename: s }));
-const extra = require("./phrase-ipa-words.js");
+const extra = vm.runInContext("WORD_IPA", ctx);
 
 const { sentences, dict } = vm.runInContext(`(() => {
   const d = new Dictionary(THEMES, GLOSSARY);
@@ -26,7 +26,7 @@ sentences.forEach(s => {
   if (!parts.includes(undefined)) out[s] = parts.join(" ");
 });
 if (missing.size) {
-  console.log(`Faltam ${missing.size} palavras em tools/phrase-ipa-words.js:\n  ${[...missing].sort().join(" ")}`);
+  console.log(`Faltam ${missing.size} palavras em js/data/phrases/wordIpa.js:\n  ${[...missing].sort().join(" ")}`);
   process.exitCode = 1;
 } else {
   const body = Object.entries(out).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join("\n");

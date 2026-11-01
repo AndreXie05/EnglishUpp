@@ -6,6 +6,7 @@ class App {
     this.storage = new Storage(App.STORAGE_KEY);
     this.dict = new Dictionary(THEMES, GLOSSARY);
     this.sentences = new SentenceBank(this.dict);
+    this.ipa = new SentenceIpa(this.dict);
     this.grammar = GRAMMAR.map(g => new GrammarLesson(g));
     this.texts = TEXTS.map(t => new PracticalText(t));
     this.progress = new Progress(this.storage.loadLocal());
@@ -16,6 +17,12 @@ class App {
     this.view = new HomeView(this);
     this.seenCount = this.progress.todayCount; // exercícios de hoje já mostrados no contador
     this.seenDay = DateUtils.today();
+    this.doneLessons = new Set(this.completedLessons());
+  }
+
+  // Lições com as 9 partes feitas; a festa só aparece para as que passam a concluídas agora
+  completedLessons() {
+    return this.dict.themes.filter(t => this.progress.lessonComplete(t.id)).map(t => t.id);
   }
 
   start() {
@@ -29,7 +36,10 @@ class App {
     Reminder.check(this);
     setInterval(() => Reminder.check(this), 60000);
     this.storage.connectRemote(this.progress.toJSON()).then(remote => {
-      if (remote) this.progress = new Progress(remote);
+      if (remote) {
+        this.progress = new Progress(remote);
+        this.doneLessons = new Set(this.completedLessons());
+      }
       this.render();
     });
   }
@@ -51,6 +61,7 @@ class App {
     const views = {
       hoje: () => new HomeView(this),
       jogo: () => new GameView(this),
+      escape: () => new EscapeView(this),
       temas: () => new ThemesView(this),
       teste: () => new TestView(this),
       escrita: () => new WritingView(this),
@@ -78,6 +89,9 @@ class App {
       Celebration.streak(this.progress.streak());
     }
     this.tickCount();
+    const finished = this.completedLessons().filter(id => !this.doneLessons.has(id));
+    finished.forEach(id => this.doneLessons.add(id));
+    if (finished.length) Celebration.lesson(this.dict.theme(finished[0]));
     const lv = this.progress.level;
     const msgs = [];
     if (won.length) msgs.push(`Conquista: ${won.join(", ")}`);

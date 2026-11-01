@@ -50,19 +50,42 @@ class ChainView extends View {
     return Utils.pick(by.get(open.length ? Utils.pick(open) : Utils.pick([...by.keys()])));
   }
 
-  // A palavra escrita no dicionário, ou o plural regular de uma palavra que lá está (cats → cat)
+  // A palavra escrita: a própria entrada do Dicionário, ou uma forma de uma palavra que lá está
+  // (cats → cat, running → run, liked → like, went → go). A pronúncia da forma calcula-se a partir da palavra base.
+  static FORMS = [
+    [/ies$/, "y", "s"], [/es$/, "", "s"], [/s$/, "", "s"],
+    [/ying$/, "ie", "ing", true], [/(.)\1ing$/, "$1", "ing", true], [/ing$/, "e", "ing", true], [/ing$/, "", "ing", true],
+    [/ied$/, "y", "ed", true], [/(.)\1ed$/, "$1", "ed", true], [/ed$/, "e", "ed", true], [/ed$/, "", "ed", true],
+  ];
+
   lookup(w) {
     const direct = this.byEn.get(w);
     if (direct) return direct;
-    const base = [w.replace(/ies$/, "y"), w.replace(/es$/, ""), w.replace(/s$/, "")].find(b => b !== w && this.byEn.has(b));
-    return base ? { ...this.byEn.get(base), en: w, ipa: "" } : null;
+    const form = (base, ipa) => ({ ...this.byEn.get(base), en: w, ipa, pt: `${this.byEn.get(base).pt} (forma de ${base})` });
+    const irregular = Verb.baseOf(w);
+    // nas formas irregulares só a do -ing (running) tem pronúncia previsível
+    if (irregular && this.byEn.has(irregular)) return form(irregular, /ing$/.test(w) && this.byEn.get(irregular).ipa ? ChainView.formIpa(this.byEn.get(irregular).ipa, "ing") : "");
+    for (const [re, to, kind, verbOnly] of ChainView.FORMS) {
+      if (!re.test(w)) continue;
+      const base = w.replace(re, to), e = this.byEn.get(base);
+      if (base !== w && e && (!verbOnly || e.pos === "verbo")) return form(base, e.ipa ? ChainView.formIpa(e.ipa, kind) : "");
+    }
+    return null;
+  }
+
+  // Pronúncia de uma forma regular: -s (/s/, /z/ ou /ɪz/), -ed (/t/, /d/ ou /ɪd/) e -ing (/ɪŋ/)
+  static formIpa(ipa, kind) {
+    if (kind === "ing") return ipa + "ɪŋ";
+    const sounds = ipa.replace(/[ːˈˌ.]/g, ""), end = /(tʃ|dʒ)$/.test(sounds) ? sounds.slice(-2) : sounds.slice(-1);
+    if (kind === "s") return ipa + (/^(s|z|ʃ|ʒ|tʃ|dʒ)$/.test(end) ? "ɪz" : /^[ptkfθ]$/.test(end) ? "s" : "z");
+    return ipa + (/^[td]$/.test(end) ? "ɪd" : /^(p|k|f|s|ʃ|tʃ|θ)$/.test(end) ? "t" : "d");
   }
 
   get last() { return this.chain.at(-1).w; }
 
   render() {
     if (this.state === "intro") return `<div><div class="eyebrow">Jogo</div><h1>Cadeia de palavras 🔗</h1></div>
-      <section class="panel" style="text-align:center"><p style="margin:0">O computador diz uma palavra. Tu dizes outra que <b>comece na última letra</b> da anterior (por exemplo <i>cat → tree → egg</i>), com qualquer palavra do Dicionário (não vale repetir palavras já usadas). Chega a ${ChainView.GOAL} palavras tuas para ganhar. Podes pedir dicas.</p>
+      <section class="panel" style="text-align:center"><p style="margin:0">O computador diz uma palavra. Tu dizes outra que <b>comece na última letra</b> da anterior (por exemplo <i>cat → tree → egg</i>), com qualquer palavra do Dicionário, incluindo formas como <i>cats</i>, <i>running</i> ou <i>went</i> (não vale repetir palavras já usadas). Chega a ${ChainView.GOAL} palavras tuas para ganhar. Podes pedir dicas.</p>
         <div class="row" style="justify-content:center"><button class="btn" data-action="chainstart">Começar</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
     if (this.state === "over") return `<div><div class="eyebrow">Fim</div><h1>${this.won ? "🏆 Ganhaste!" : `${this.mine} palavra${this.mine === 1 ? "" : "s"}`}</h1></div>
       <section class="panel"><p style="margin:0">${this.why} Ganhaste ${this.xp} XP.</p>

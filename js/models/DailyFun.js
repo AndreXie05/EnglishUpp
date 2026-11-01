@@ -32,10 +32,14 @@ class DailyFun {
 
   /* ----- palavra do dia ----- */
 
-  static wordOfDay(app) {
-    // Qualquer palavra solta de qualquer lição, estudada ou não
-    const list = app.dict.allWords.filter(w => !w.en.includes(" ")).sort((a, b) => a.key.localeCompare(b.key));
-    return list.length ? list[DailyFun.dayHash(1) % list.length] : null;
+  // Três palavras soltas de qualquer lição, estudada ou não: uma de A1–A2, uma de B1–B2 e uma de C1–C2, fixas durante o dia
+  static wordsOfDay(app) {
+    const all = app.dict.allWords.filter(w => !w.en.includes(" ")).sort((a, b) => a.key.localeCompare(b.key));
+    const level = w => app.dict.theme(w.themeId).level;
+    return [["A1", "A2"], ["B1", "B2"], ["C1", "C2"]].map((levels, i) => {
+      const list = all.filter(w => levels.includes(level(w)));
+      return list.length ? list[DailyFun.dayHash(11 + i) % list.length] : null;
+    }).filter(Boolean);
   }
 
   static dayHash(salt) {

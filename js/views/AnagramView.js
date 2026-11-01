@@ -20,9 +20,11 @@ class AnagramView extends View {
     this.nextWord();
   }
 
+  // Cada palavra sai uma só vez por jogo; quando acabam as palavras dos temas escolhidos, o jogo acaba
   nextWord() {
     const free = this.pool.filter(w => !this.used.has(w.key));
-    this.word = Utils.pick(free.length ? free : this.pool);
+    if (!free.length) return this.end(true);
+    this.word = Utils.pick(free);
     this.used.add(this.word.key);
     // Baralha até a ordem ser diferente da palavra
     let letters;
@@ -58,8 +60,8 @@ class AnagramView extends View {
 
   overScreen() {
     const rec = this.score > 0 && this.score === this.progress.data.anagramBest;
-    return `<div><div class="eyebrow">Fim do tempo</div><h1>${this.score} palavra${this.score === 1 ? "" : "s"}${rec ? " · novo recorde! 🎉" : ""}</h1></div>
-      <section class="panel"><p style="margin:0">Passaste ${this.skipped}. Ganhaste ${this.xp} XP. Recorde: ${this.progress.data.anagramBest || 0}.</p>
+    return `<div><div class="eyebrow">${this.allDone ? "Acabaram as palavras" : "Fim do tempo"}</div><h1>${this.score} palavra${this.score === 1 ? "" : "s"}${rec ? " · novo recorde! 🎉" : ""}</h1></div>
+      <section class="panel">${this.allDone ? `<p style="margin:0">Já saíram todas as ${this.pool.length} palavras dos temas escolhidos.</p>` : ""}<p style="margin:0">Passaste ${this.skipped}. Ganhaste ${this.xp} XP. Recorde: ${this.progress.data.anagramBest || 0}.</p>
         <div class="row"><button class="btn" data-action="angstart">Jogar outra vez</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
   }
 
@@ -75,9 +77,10 @@ class AnagramView extends View {
     }, 1000);
   }
 
-  end() {
+  end(allDone = false) {
     clearInterval(this.timer);
     this.state = "over";
+    this.allDone = allDone;
     this.xp = Math.min(20, this.score);
     this.progress.data.anagramBest = Math.max(this.score, this.progress.data.anagramBest || 0);
     this.progress.addGame(this.xp, "anagram");

@@ -1,7 +1,7 @@
-// Desafio de 60 segundos com o passado e o particípio dos verbos irregulares
+// Desafio de 60 segundos com os verbos irregulares: formas e tempos
 class VerbChallengeView extends ChallengeView {
   get bestKey() { return "verbBest"; }
-  get rule() { return "o máximo de passados e particípios de verbos irregulares"; }
+  get rule() { return "o máximo de perguntas sobre verbos irregulares (passado, particípio, presente, futuro…)"; }
   get heading() { return "Verbos em 60 segundos"; }
 
   keys() {

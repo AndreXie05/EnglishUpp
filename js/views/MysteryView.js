@@ -1,6 +1,7 @@
 // Palavra misteriosa: adivinha uma palavra que já estudaste em 6 tentativas (como o Wordle)
 class MysteryView extends View {
   static TRIES = 6;
+  static HINTS = 2;
   static ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 
   constructor(app) {
@@ -28,6 +29,7 @@ class MysteryView extends View {
     this.guesses = [];
     this.current = "";
     this.msg = "";
+    this.hints = [];   // posições reveladas pela dica
     this.xp = 0;
   }
 
@@ -74,7 +76,9 @@ class MysteryView extends View {
       <section class="panel mystpanel">
         <p class="muted" style="margin:0 0 10px;text-align:center">Palavra de ${this.len} letras: ${this.esc(this.word.pt)}</p>
         <div class="mgrid" style="margin-bottom:12px">${rows}</div>
+        ${this.hints.length ? `<div class="muted" style="text-align:center">💡 ${this.hints.map(i => `${i + 1}.ª letra: <b>${this.word.en[i].toUpperCase()}</b>`).join(" · ")}</div>` : ""}
         <div class="muted" style="min-height:1.4em;text-align:center">${this.esc(this.msg)}</div>
+        ${this.over || this.hints.length >= MysteryView.HINTS ? "" : `<div class="row" style="justify-content:center"><button class="btn ghost small" data-action="mhint">💡 Mostrar uma letra (−1 XP)</button></div>`}
         ${this.over ? "" : `<div class="mkb">${kb}</div>`}
         ${end}
       </section>`;
@@ -94,7 +98,7 @@ class MysteryView extends View {
     this.current = "";
     this.msg = "";
     if (this.won) {
-      this.xp = 2 + (MysteryView.TRIES - this.guesses.length);
+      this.xp = Math.max(1, 2 + (MysteryView.TRIES - this.guesses.length) - this.hints.length);
       this.progress.addGame(this.xp, "mystery");
       this.app.save();
     } else if (this.lost) {
@@ -102,6 +106,14 @@ class MysteryView extends View {
       this.progress.exerciseDone("game:mystery");
       this.app.save();
     }
+  }
+
+  // Dica: revela uma letra no sítio certo que ainda não acertaste
+  hint() {
+    if (this.over || this.hints.length >= MysteryView.HINTS) return;
+    const found = new Set(this.guesses.flatMap(g => g.res.map((r, i) => r === "ok" ? i : -1)));
+    const free = [...this.word.en].map((_, i) => i).filter(i => !found.has(i) && !this.hints.includes(i));
+    if (free.length) this.hints.push(Utils.pick(free));
   }
 
   onKey(e) {
@@ -118,6 +130,7 @@ class MysteryView extends View {
       case "mkey": this.type(value); break;
       case "mback": this.current = this.current.slice(0, -1); break;
       case "menter": this.submit(); break;
+      case "mhint": this.hint(); break;
       case "magain2": this.start(); break;
       case "mscope": this.progress.data.mysteryScope = value; this.app.save(); this.start(); break;
       default: return false;

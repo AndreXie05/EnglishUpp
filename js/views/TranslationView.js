@@ -85,7 +85,7 @@ class TranslationView extends View {
         <div><span class="eyebrow">A tua resposta</span><p>${mine || "<em>(vazio)</em>"}</p></div>
         <div><span class="eyebrow">Correto</span><p>${right}</p></div>
         <p class="muted" style="margin:0;font-size:.85rem"><del>riscado</del> = está a mais ou errado · <ins>verde</ins> = faltou</p></div>`}
-      <div class="ex">${this.esc(t.en)}</div>
+      ${this.example(t.en, t.pt)}
       <div class="row"><button class="btn" id="nextbtn" data-action="nextTr">Continuar</button>${t.word ? this.cambridgeLink(t.word) : ""}</div>`;
   }
 

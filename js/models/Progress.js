@@ -243,7 +243,7 @@ class Progress {
 
   // Palavras que já acertaste pelo menos uma vez no teste diário, mas ainda não estão dominadas
   learningInTheme(theme) {
-    return theme.words.filter(w => { const b = this.wordState(w.key)?.box || 0; return b >= 1 && b < Progress.MASTERED_BOX; }).length;
+    return theme.words.filter(w => { const s = this.wordState(w.key), b = s?.box || 0; return (b >= 1 || (s?.pc || 0) >= 3) && b < Progress.MASTERED_BOX; }).length;
   }
 
   finishLesson(theme) {
@@ -265,12 +265,18 @@ class Progress {
   }
 
   // Acertar nos exercícios da lição não muda o calendário do teste diário, mas ao fim de 3 acertos
-  // a palavra passa de “nova” a “a aprender” (caixa 1); só o teste diário a leva mais longe
+  // a palavra passa de “nova” a “a aprender”; a caixa fica igual, para o teste diário não saltar o intervalo de 2 dias
   practiceCredit(key) {
     const w = this.data.words[key];
     if (!w || w.box >= 1) return;
     w.pc = (w.pc || 0) + 1;
-    if (w.pc >= 3) w.box = 1;
+  }
+
+  // Fora do teste diário (escrita, ordenar, completar): um erro conta sempre, um acerto só se a palavra já estava para rever,
+  // senão dava para subir várias caixas no mesmo dia
+  recordIfDue(key, correct) {
+    const w = this.data.words[key];
+    if (w && (!correct || w.due <= DateUtils.today())) this.recordAnswer(key, correct);
   }
 
   // Acerto: sobe de caixa e volta mais tarde. Erro: volta à caixa 0 e aparece amanhã
@@ -282,6 +288,7 @@ class Progress {
       w.right = (w.right || 0) + 1;
     } else {
       w.box = 0;
+      w.pc = 0;
       w.wrong = (w.wrong || 0) + 1;
       w.rv = false; // voltou a falhar: volta à lista de erros
     }

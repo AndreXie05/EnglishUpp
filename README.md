@@ -91,11 +91,11 @@ EnglishUpp/
     ├── main.js, App.js   startup and screen control
     ├── utils.js          helper functions (dates, text)
     ├── data/             the content, one folder per kind
-    │   ├── lessons/      themes.js, themesA2–C2.js (the lessons), stories.js (reading texts), order.js, wordExamples.js (word of the day)
+    │   ├── lessons/      themes.js, themesA2–C2.js (the lessons), stories.js (reading texts), order.js, wordExamples.js (word of the day), sentencePt.js (translations of text sentences used in exercises)
     │   ├── glossary/     support words for the dictionary, one file per letter range (AC, DG, HN, OR, S, TZ)
     │   ├── grammar/      grammar.js, grammarB–G.js (grammar lessons A1–C2) and verbs.js (main verbs and forms)
     │   ├── texts/        texts.js, textsB–G.js (practical texts), textsExtra.js (extra questions), clozetexts.js
-    │   ├── phrases/      phrases.js, phrases2.js (useful phrases) and phraseIpa.js (their pronunciation)
+    │   ├── phrases/      phrases.js, phrases2.js (useful phrases), phraseIpa.js (their pronunciation) and wordIpa.js (IPA of words missing from the dictionary, used to build the pronunciation of every sentence)
     │   └── games/        adventures.js, crossclues.js, emojis.js, fixes.js, freeSentences.js
     ├── models/           Word, Theme, Dictionary, Progress, Quiz, MatchExercise,
     │                     SentenceBank, ErrorReview, TranslationTask, ProductionTask (OrderTask, WriteTask, ClozeTask), PracticalText, GrammarLesson, GrammarQuiz, Verb, VerbDrill

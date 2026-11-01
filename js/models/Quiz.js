@@ -71,10 +71,15 @@ class Quiz {
     return (Quiz.ALTS.get(theme.id)[word.key] || []).filter(s => s.toLowerCase() !== word.exEn.toLowerCase());
   }
 
+  // Tradução de uma frase dos textos (vazia se ainda não houver)
+  static ptOf(en) {
+    return (typeof SENTENCE_PT !== "undefined" && SENTENCE_PT[en]) || "";
+  }
+
   // Frase de uma pergunta com espaço. “Escolher” e “escrever” usam frases diferentes da mesma palavra:
   // o exemplo e as frases de posição par num; as outras noutro. Sem alternativas, usa o exemplo
   pickSentence(word, theme, type) {
-    const all = [{ en: word.exEn, pt: word.exPt }, ...Quiz.altSentences(theme, word).map(en => ({ en, pt: "" }))];
+    const all = [{ en: word.exEn, pt: word.exPt }, ...Quiz.altSentences(theme, word).map(en => ({ en, pt: Quiz.ptOf(en) }))];
     const writing = type === Question.TYPES.FILL_WRITE || type === Question.TYPES.FILL_WRITE_PT;
     const mine = all.filter((_, i) => writing === (i % 2 === 1));
     const pool = mine.length ? mine : all;
@@ -95,7 +100,7 @@ class Quiz {
 
   // Frase para “o que significa nesta frase”: não precisa de tradução, por isso há muito por onde escolher
   pickAny(word, theme) {
-    const alts = Quiz.altSentences(theme, word).map(en => ({ en, pt: "" }));
+    const alts = Quiz.altSentences(theme, word).map(en => ({ en, pt: Quiz.ptOf(en) }));
     const all = alts.length && Math.random() < 0.75 ? [...alts, ...Quiz.pairs(theme, word).slice(1)] : Quiz.pairs(theme, word).concat(alts);
     return all[Math.floor(Math.random() * all.length)];
   }

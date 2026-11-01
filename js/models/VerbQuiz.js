@@ -1,4 +1,4 @@
-// Perguntas rápidas sobre verbos irregulares (passado e particípio), com a mesma forma do Quiz do desafio
+// Perguntas rápidas sobre verbos irregulares (formas e tempos), com a mesma forma do Quiz do desafio
 class VerbQuiz {
   constructor(verbs, count = 150) {
     this.verbs = verbs;
@@ -9,7 +9,9 @@ class VerbQuiz {
     this.wrong = [];
   }
 
+  // Metade das perguntas é sobre as formas (passado, particípio); a outra metade conjuga num tempo (presente, futuro…)
   makeQuestion(v) {
+    if (Utils.pick([true, false])) return this.tenseQuestion(v);
     const pp = Utils.pick([true, false]);
     const valid = pp ? v.participles : v.pasts;
     const form = x => pp ? x.participles : x.pasts;
@@ -19,6 +21,19 @@ class VerbQuiz {
     return {
       retry: false, written: false, word: { key: valid[0], pt: v.pt },
       title: `${pp ? "Particípio passado" : "Passado simples"} de “${v.base}” (${v.pt})`,
+      options, isCorrect: given => valid.includes(given),
+    };
+  }
+
+  tenseQuestion(v) {
+    const [label, pron] = Utils.pick(Verb.PRONOUNS);
+    const [tense, tenseName] = Utils.pick(Verb.TENSES.filter(([t]) => t !== "past"));
+    const valid = v.answers(tense, pron);
+    const wrong = [...new Set(Verb.TENSES.map(([t]) => v.form(t, pron)))].filter(f => !valid.includes(f)).slice(0, 3);
+    const options = Utils.shuffle([valid[0], ...wrong]).map(f => ({ key: f, label: f }));
+    return {
+      retry: false, written: false, word: { key: valid[0], pt: v.pt },
+      title: `${tenseName}: ${label} ___ (${v.base} · ${v.pt})`,
       options, isCorrect: given => valid.includes(given),
     };
   }

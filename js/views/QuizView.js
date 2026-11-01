@@ -124,7 +124,7 @@ class QuizView extends View {
       <div class="answer">
         <div class="hw"><h3>${this.esc(w.en)}</h3><span class="ipa">/${this.esc(w.ipa)}/</span><span class="pos">${this.esc(w.pos)}</span></div>
         <div><span class="eyebrow">Tradução</span> <span class="pt">${this.esc(w.pt)}</span></div>
-        <div class="ex">${this.esc(s.en)}${s.pt ? `<br><i>${this.esc(s.pt)}</i>` : ""}</div>
+        ${this.example(s.en, s.pt)}
       </div>
       <div class="row"><button class="btn" id="nextbtn" data-action="next">Continuar</button>${this.cambridgeLink(w)}</div>`;
   }

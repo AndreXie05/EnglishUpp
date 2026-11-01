@@ -18,7 +18,7 @@ class HomeView extends View {
       ${this.writingCard()}
       ${this.weekCard()}
       ${this.backupReminder()}
-      <p class="muted" style="margin:0;font-size:.9rem">Como funciona: todos os dias estudas uma lição nova. No dia seguinte, fazes um teste. Se acertas, a palavra volta daqui a 2, 4, 7 e 15 dias. Se erras, volta amanhã.</p>
+      <p class="muted" style="margin:0;font-size:.9rem">Como funciona: todos os dias estudas uma lição nova. No dia seguinte, fazes um teste. Se acertas, a palavra volta daqui a 2, 4, 7, 15 e 30 dias. Se erras, volta amanhã.</p>
       <div class="sync">${this.esc(this.app.storage.label)}</div>`;
   }
 
@@ -130,13 +130,15 @@ class HomeView extends View {
   }
 
   wordOfDayCard() {
-    const w = DailyFun.wordOfDay(this.app);
-    if (!w) return "";
-    const ex = DailyFun.examples(this.app, w).map(e => `<div class="ex">${this.esc(e.en)}${e.pt ? `<br><i>${this.esc(e.pt)}</i>` : ""}</div>`).join("");
-    return `<section class="panel wod"><div class="eyebrow">Palavra do dia</div>
-      <div class="hw"><h2>${this.esc(w.en)}</h2><span class="ipa">/${this.esc(w.ipa)}/</span><span class="pos">${this.esc(w.pos)}</span></div>
-      <div class="pt" style="font-weight:700">${this.esc(w.pt)}</div>
-      ${ex}${this.cambridgeLink(w)}</section>`;
+    const words = DailyFun.wordsOfDay(this.app);
+    if (!words.length) return "";
+    const item = w => {
+      const e = DailyFun.examples(this.app, w)[0];
+      return `<div class="wodword"><div class="hw"><h2>${this.esc(w.en)}</h2><span class="ipa">/${this.esc(w.ipa)}/</span><span class="pos">${this.esc(w.pos)}</span></div>
+        <div class="pt" style="font-weight:700">${this.esc(w.pt)}</div>
+        <div class="ex">${this.esc(e.en)}${e.pt ? `<br><i>${this.esc(e.pt)}</i>` : ""}</div>${this.cambridgeLink(w)}</div>`;
+    };
+    return `<section class="panel wod"><div class="eyebrow">Palavras do dia</div>${words.map(item).join("")}</section>`;
   }
 
   dailyChallengeCard() {

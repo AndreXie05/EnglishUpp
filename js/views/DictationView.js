@@ -21,6 +21,7 @@ class DictationView extends View {
     this.i = 0;
     this.correct = 0;
     this.typos = 0;
+    this.helped = 0;   // frases certas com dica
     this.all = DictationView.lines(this.app);
     this.xp = 0;
     this.load();
@@ -32,13 +33,14 @@ class DictationView extends View {
     const l = this.all[Number(k)];
     this.dictation = new Dictation(l.en, l.pt, this.known);
     this.shown = true;
+    this.hint = false;
     this.result = null;
     this.given = "";
   }
 
   render() {
     if (this.state === "intro") return `<div><div class="eyebrow">Jogo</div><h1>Ditado ✍️</h1></div>
-      <section class="panel" style="text-align:center"><p style="margin:0">Lê a frase em inglês. Quando estiveres pronto, ela esconde-se e escreves de memória. Se te enganares numa letra (por exemplo <i>banc</i> em vez de <i>bank</i>), aceito na mesma e mostro como se escreve. São ${DictationView.ROUNDS} frases.</p>
+      <section class="panel" style="text-align:center"><p style="margin:0">Lê a frase em inglês. Quando estiveres pronto, ela esconde-se e escreves de memória. Se te enganares numa letra (por exemplo <i>banc</i> em vez de <i>bank</i>), aceito na mesma e mostro como se escreve. Se precisares, há uma dica com a primeira letra de cada palavra. São ${DictationView.ROUNDS} frases.</p>
         <div class="row" style="justify-content:center"><button class="btn" data-action="dictstart">Começar</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
     if (this.state === "over") return `<div><div class="eyebrow">Fim</div><h1>${this.correct} de ${DictationView.ROUNDS}${this.correct === DictationView.ROUNDS ? " 🎉" : ""}</h1></div>
       <section class="panel"><p style="margin:0">Ganhaste ${this.xp} XP.</p><div class="row"><button class="btn" data-action="dictstart">Jogar outra vez</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
@@ -49,7 +51,8 @@ class DictationView extends View {
       <div class="row" style="justify-content:center"><button class="btn" data-action="dicthide">Já sei, esconder</button></div></section>`;
     return `${head}<section class="panel" style="gap:14px"><div class="eyebrow">Escreve a frase em inglês</div><div class="muted">${this.esc(d.pt)}</div>
       <form id="dictform" class="row" style="flex-wrap:nowrap"><input type="text" id="dict-input" autocomplete="off" autocapitalize="off" spellcheck="false" ${this.result ? "disabled" : ""} value="${this.esc(this.given)}" aria-label="Frase"><button class="btn" ${this.result ? "disabled" : ""}>Corrigir</button></form>
-      ${this.result ? this.feedback() : `<div class="row"><button class="linkbtn" data-action="dictpeek">Ver outra vez</button></div>`}</section>`;
+      ${this.hint && !this.result ? `<div class="ipa" style="font-family:inherit;letter-spacing:.08em">${this.esc(DictationView.firstLetters(d.en))}</div>` : ""}
+      ${this.result ? this.feedback() : `<div class="row"><button class="linkbtn" data-action="dictpeek">Ver outra vez</button>${this.hint ? "" : `<button class="linkbtn" data-action="dicthint">💡 Dica: primeiras letras (vale menos XP)</button>`}</div>`}</section>`;
   }
 
   feedback() {
@@ -64,8 +67,13 @@ class DictationView extends View {
       ${typos ? `<div class="muted">Escreve-se: ${typos}</div>` : ""}
       ${r.correct && !r.typos ? "" : `<div class="diff"><div><span class="eyebrow">A tua resposta</span><p>${mine || "<em>(vazio)</em>"}</p></div>
         <div><span class="eyebrow">Correto</span><p>${right}</p></div></div>`}
-      <div class="ex">${this.esc(this.dictation.en)}</div>
+      ${this.example(this.dictation.en, this.dictation.pt)}
       <div class="row"><button class="btn" id="nextbtn" data-action="dictnext">${this.i === DictationView.ROUNDS - 1 ? "Ver resultado" : "Seguinte →"}</button></div>`;
+  }
+
+  // "I need to go" → "I n___ t_ g_": só a primeira letra de cada palavra, o resto em tracinhos
+  static firstLetters(en) {
+    return en.replace(/[A-Za-z']+/g, w => w[0] + "_".repeat(w.length - 1));
   }
 
   onSubmit(form) {
@@ -74,7 +82,7 @@ class DictationView extends View {
     if (!value.trim()) return true;
     this.given = value;
     this.result = this.dictation.check(value);
-    if (this.result.correct) { this.correct++; this.typos += this.result.typos; }
+    if (this.result.correct) { this.correct++; this.typos += this.result.typos; if (this.hint) this.helped++; }
     this.app.render();
     return true;
   }
@@ -82,7 +90,8 @@ class DictationView extends View {
   next() {
     if (this.i >= DictationView.ROUNDS - 1) {
       this.state = "over";
-      this.xp = this.correct + (this.correct === DictationView.ROUNDS ? 3 : 0);
+      // frase certa sem dica: 1 XP; com dica: meio; +3 se acertaste todas sem dicas
+      this.xp = this.correct - this.helped + Math.floor(this.helped / 2) + (this.correct === DictationView.ROUNDS && !this.helped ? 3 : 0);
       this.progress.addGame(this.xp, "dictation");
       this.app.save();
     } else { this.i++; this.load(); }
@@ -92,6 +101,7 @@ class DictationView extends View {
     switch (action) {
       case "dictstart": this.newGame(); break;
       case "dicthide": this.shown = false; break;
+      case "dicthint": this.given = document.getElementById("dict-input")?.value || ""; this.hint = true; break;
       case "dictpeek": this.given = document.getElementById("dict-input")?.value || ""; this.shown = true; break;
       case "dictnext": this.next(); break;
       default: return false;

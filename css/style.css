@@ -413,6 +413,7 @@ main>.panel>h2:first-child{color:var(--pc)}
 .snum{font-family:var(--display);font-weight:800;font-size:5.5rem;line-height:1}
 .slabel{font-family:var(--display);font-weight:700;font-size:1.6rem}
 .smsg{margin-top:10px;font-size:1.15rem;font-weight:700;padding:0 20px}
+.snum.ltitle{font-size:clamp(2.2rem,9vw,4rem);line-height:1.1;margin-top:8px;padding:0 20px;overflow-wrap:anywhere}
 .streakfx>i{position:absolute;top:-14px;width:10px;height:16px;border-radius:2px;opacity:.95;animation:sfall linear forwards}
 @keyframes sfade{from{opacity:0}to{opacity:1}}
 @keyframes spop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
@@ -547,6 +548,8 @@ main>.panel.mascot::before{display:none}
 @media (max-width:520px){.qsopts{grid-template-columns:1fr}}
 .qsopt{text-align:left;border-radius:999px;padding:12px 16px}
 .qsopt b{color:#F5A524;margin-right:6px}
+.qsopt .ipa{font-size:.9rem;font-weight:400}
+.qsopt .qsmean{display:block;font-weight:400;opacity:.85;margin:4px 0 0 22px}
 .qsladder{list-style:none;margin:0;padding:10px;border-radius:14px;background:linear-gradient(180deg,#1B2A6B,#3A1B6B);color:#fff;display:flex;flex-direction:column;gap:2px;font-size:.78rem;font-variant-numeric:tabular-nums}
 .qsladder li{display:flex;gap:8px;padding:2px 6px;border-radius:6px;opacity:.7}
 .qsladder li span{width:1.4em;opacity:.7}
@@ -631,3 +634,8 @@ main>.panel.mascot::before{display:none}
 .missionfx .mtitle{font-family:var(--display);font-weight:800;font-size:1.6rem;margin:6px 0 4px}
 .missionfx .mline{font-weight:700;color:var(--muted);margin-top:4px}
 @media (prefers-reduced-motion:reduce){.missionfx,.missionfx .mbox{animation:none}}
+.wod .wodword{display:flex;flex-direction:column;gap:4px}
+.wod .wodword+.wodword{border-top:1px solid var(--line);padding-top:12px}
+.wod .wodword .hw h2{font-size:1.6rem;margin:0}
+.tconj{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--phon)}
+.tconj b{font-family:var(--body);color:var(--muted);font-weight:600}

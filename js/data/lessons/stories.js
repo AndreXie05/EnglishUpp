@@ -4,7 +4,7 @@ const STORIES = {
   "title": "A new friend",
   "paragraphs": [
    "Hello! My name is Rui and I am from Lisbon. This morning I go to a new English class. The classroom is big and there are many students. I say, \"Good morning!\" A girl says, \"Hi! Nice to meet you. My name is Ana.\" She is from Brazil, but now she lives in Portugal. I say, \"Nice to meet you, Ana. How are you?\" She says, \"I am fine, thank you. And you?\" I say, \"I am fine, thanks. Welcome to the class!\"",
-   "The teacher is a kind man. He says, \"Please sit down. Today we learn greetings.\" We say hello, goodbye, please, thank you and sorry. I do not understand one word and I say, \"Pardon? Can you say it again, please?\" The teacher is happy and he says it again, slowly. Then he asks, \"Excuse me, what is your name?\" I say, \"My name is Rui.\" Everybody smiles.",
+   "The teacher is a kind man. He says, \"Please sit down. Today we learn greetings.\" I do not understand one word and I say, \"Pardon? Can you say it again, please?\" The teacher is happy and he says it again, slowly. Then he asks, \"Excuse me, what is your name?\" I say, \"My name is Rui.\" Everybody smiles.",
    "After the class, Ana and I have a coffee. We talk about our families and our jobs. She says, \"See you later, Rui! Good luck with your homework!\" I say, \"Thank you, Ana. Goodbye!\" In the evening I say, \"Good night!\" to my mother. It is a good day, and I have a new friend. Tomorrow we have another class, and I want to learn more words with my new friend."
   ],
   "questions": [

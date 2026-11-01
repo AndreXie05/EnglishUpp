@@ -115,7 +115,7 @@ class ProductionView extends View {
     const w = t.word;
     return `<div class="fb ${r.ok ? "ok" : "no"}">${r.ok ? "Muito bem!" : "Falta ajustar."}</div>
       ${r.ok ? `<div class="muted">Verifiquei a palavra, o tamanho e a pontuação. A gramática compara tu com o modelo.</div>` : `<ul>${r.problems.map(p => `<li>${this.esc(p)}</li>`).join("")}</ul>`}
-      <div class="answer"><div><span class="eyebrow">Frase modelo</span></div><div class="ex">${this.esc(w.exEn)}<br><i>${this.esc(w.exPt)}</i></div></div>
+      <div class="answer"><div><span class="eyebrow">Frase modelo</span></div>${this.example(w.exEn, w.exPt)}</div>
       <div class="row"><button class="btn" id="nextbtn" data-action="pnext">Continuar</button></div>`;
   }
 
@@ -165,7 +165,7 @@ class ProductionView extends View {
       const r = this.task.check(text);
       this.result = r;
       if (r.ok) { this.correct++; this.points += 10; }
-      this.progress.recordAnswer(this.task.word.key, r.ok);
+      this.progress.recordIfDue(this.task.word.key, r.ok);
       this.app.save();
       this.app.render();
       return true;
@@ -176,7 +176,7 @@ class ProductionView extends View {
       this.result = this.cloze.blanks.map((b, i) => this.cloze.checkBlank(b, values[i] || ""));
       this.result.forEach((res, i) => {
         if (res === "ok") { this.correct++; this.points += 5; } else if (res === "almost") this.points += 2;
-        this.progress.recordAnswer(this.cloze.blanks[i].key, res === "ok");
+        this.progress.recordIfDue(this.cloze.blanks[i].key, res === "ok");
       });
       this.saveRound();
       this.app.render();
@@ -205,7 +205,7 @@ class ProductionView extends View {
         const r = this.task.check(this.built);
         this.result = r;
         if (r.ok) { this.correct++; this.points += 10; }
-        if (this.task.key) this.progress.recordAnswer(this.task.key, r.ok);
+        if (this.task.key) this.progress.recordIfDue(this.task.key, r.ok);
         this.app.save();
         break;
       }

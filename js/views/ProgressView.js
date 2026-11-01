@@ -218,6 +218,7 @@ class ProgressView extends View {
     }
     if (action === "bkconfirm" && this.pendingBackup) {
       this.app.progress = new Progress(this.pendingBackup.data);
+      this.app.doneLessons = new Set(this.app.completedLessons()); // sem festa para as lições que já vinham concluídas
       this.pendingBackup = null;
       this.backupMsg = { ok: true, text: "Progresso recuperado!" };
       this.app.save();

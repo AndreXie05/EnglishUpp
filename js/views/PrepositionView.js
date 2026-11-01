@@ -26,7 +26,7 @@ class PrepositionView extends View {
     this.xp = 0;
   }
 
-  get tab() { return "jogo"; }
+  get tab() { return "gramatica"; }
   get finished() { return this.index >= this.rounds.length; }
 
   // A cena em emojis, posicionada para cada preposição
@@ -70,7 +70,7 @@ class PrepositionView extends View {
   result() {
     return `<div class="eyebrow">Preposições</div><h1>${this.score} de ${this.rounds.length}</h1>
       <section class="panel"><p style="margin:0">${this.score === this.rounds.length ? "Perfeito!" : this.score >= 6 ? "Muito bem!" : "Vai treinando: repete e vais ver."} Ganhaste ${this.xp} XP.</p>
-        <div class="row"><button class="btn" data-action="pagain">Jogar outra vez</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
+        <div class="row"><button class="btn" data-action="pagain">Jogar outra vez</button><button class="btn ghost" data-action="nav" data-v="gramatica">Voltar à Gramática</button></div></section>`;
   }
 
   pick(p) {

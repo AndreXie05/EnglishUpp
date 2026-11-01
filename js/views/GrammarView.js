@@ -32,6 +32,7 @@ class GrammarView extends View {
         const n = this.lessons.filter(l => l.level === code).length;
         return `<button data-action="glevel" data-v="${code}" aria-pressed="${code === level}">${code}<span class="tabcount">${n || "em breve"}</span></button>`;
       }).join("")}</div>
+      <div class="gamegrid"><button class="gcard g5" data-action="gpreps"><span class="gicon" aria-hidden="true">📍</span><span class="gname">Preposições de lugar</span><span class="gdesc">Onde está o objeto? in, on, under…</span></button></div>
       <div><h2>Nível ${level} · ${this.esc(info[1])}</h2></div>
       ${items.length ? `<div class="themes">${items.map(l => this.card(l)).join("")}</div>`
         : `<section class="panel"><p style="margin:0">Ainda não há lições de gramática de nível ${level}.</p></section>`}`;
@@ -73,6 +74,9 @@ class GrammarView extends View {
         this.level = this.lesson.level;
         this.lesson = null;
         break;
+      case "gpreps":
+        this.app.show(new PrepositionView(this.app));
+        return true;
       case "gstart":
         this.app.show(new GrammarQuizView(this.app, new GrammarQuiz(this.lessons.find(l => l.id === value))));
         return true;

@@ -69,6 +69,12 @@ class View {
     return Utils.esc(s);
   }
 
+  // Frase de exemplo: inglês, pronúncia /…/ (se houver) e tradução (se houver)
+  example(en, pt) {
+    const ipa = this.app.ipa.of(en);
+    return `<div class="ex">${this.esc(en)}${ipa ? `<div class="ipa">/${this.esc(ipa)}/</div>` : pt ? "<br>" : ""}${pt ? `<i>${this.esc(pt)}</i>` : ""}</div>`;
+  }
+
   cambridgeLink(word) {
     return `<a class="cam" href="${Utils.cambridgeUrl(word.en)}" target="_blank" rel="noopener">Ouvir no Cambridge ↗</a>`;
   }

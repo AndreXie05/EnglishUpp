@@ -29,7 +29,7 @@ class FlashView extends View {
     const w = this.dict.word(this.keys[this.index]), back = this.flip[this.index];
     const front = back ? `<div class="q">${this.esc(w.pt)}</div>` : `<div class="q">${this.esc(w.en)}</div><div class="ipa">/${this.esc(w.ipa)}/</div>`;
     const answer = this.shown ? `<div class="answer">${back ? `<div class="hw"><h3>${this.esc(w.en)}</h3><span class="ipa">/${this.esc(w.ipa)}/</span></div>` : `<div class="pt">${this.esc(w.pt)}</div>`}
-        <div class="ex">${this.esc(w.exEn)}<br><i>${this.esc(w.exPt)}</i></div></div>
+        ${this.example(w.exEn, w.exPt)}</div>
       <div class="row"><button class="btn" data-action="fknew">Sabia</button><button class="btn ghost" data-action="fnot">Não sabia</button></div>`
       : `<div class="row"><button class="btn" data-action="fshow">Mostrar</button></div>`;
     return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Cartões · ${this.index + 1} de ${this.keys.length}${this.due.has(w.key) ? " · em atraso" : ""}</span><button class="linkbtn" data-action="nav" data-v="jogo">Sair</button></div>

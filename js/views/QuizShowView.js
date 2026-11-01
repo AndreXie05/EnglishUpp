@@ -67,10 +67,16 @@ class QuizShowView extends View {
     else if (q.type === T.PT_EN) prompt = `<div class="eyebrow">Como se diz em inglês?</div><div class="q">${this.esc(w.pt)}</div>`;
     else prompt = `<div class="eyebrow">Escolhe a palavra que falta</div><p class="sentence">${Sentence.render(q.sentence.en, this.dict.theme(w.themeId), a ? null : w.key)}</p>`;
     const label = o => q.type === T.EN_PT ? o.pt : `${o.en}`;
+    // Opções em inglês mostram a pronúncia; depois de responder, cada opção mostra o que significa
+    const optHtml = o => {
+      const ipa = ` <span class="ipa">/${this.esc(o.ipa)}/</span>`;
+      if (q.type === T.EN_PT) return this.esc(o.pt) + (a ? `<small class="qsmean">= ${this.esc(o.en)}${ipa}</small>` : "");
+      return this.esc(o.en) + ipa + (a ? `<small class="qsmean">= ${this.esc(o.pt)}</small>` : "");
+    };
     const opts = q.options.map((o, k) => {
       const gone = this.hidden.has(o.key);
       const state = a ? (o.key === w.key ? "ok" : o.key === this.chosen ? "no" : "") : "";
-      return `<button class="opt qsopt ${state}" data-action="qspick" data-v="${this.esc(o.key)}" ${a || gone ? "disabled" : ""} style="${gone ? "visibility:hidden" : ""}"><b>${"ABCD"[k]}</b> ${this.esc(label(o))}</button>`;
+      return `<button class="opt qsopt ${state}" data-action="qspick" data-v="${this.esc(o.key)}" ${a || gone ? "disabled" : ""} style="${gone ? "visibility:hidden" : ""}"><b>${"ABCD"[k]}</b> ${optHtml(o)}</button>`;
     }).join("");
     const ladder = QuizShowView.PRIZES.map((p, k) => `<li class="${k === this.i ? "cur" : ""} ${k < this.i ? "past" : ""} ${QuizShowView.SAFE.includes(k) ? "safe" : ""}"><span>${k + 1}</span>${this.euro(p)}</li>`).reverse().join("");
     const help = `<div class="row" style="justify-content:center">
@@ -112,7 +118,12 @@ class QuizShowView extends View {
   }
 
   onKey(e) {
-    if (this.state !== "play" || this.chosen !== null) return;
+    if (this.state !== "play") return;
+    // Depois de responder, Enter avança (ou mostra o resultado se errou)
+    if (this.chosen !== null) {
+      if (e.key === "Enter" && e.target.tagName !== "BUTTON") this.onAction(this.chosen === this.q.word.key ? "qsnext" : "qsend");
+      return;
+    }
     const k = "abcd".indexOf(e.key.toLowerCase());
     if (k >= 0 && this.q.options[k] && !this.hidden.has(this.q.options[k].key)) { this.onAction("qspick", this.q.options[k].key); }
   }

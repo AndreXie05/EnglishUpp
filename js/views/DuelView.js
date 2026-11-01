@@ -1,4 +1,5 @@
-// Duelo: 10 perguntas em corrida contra um adversário simulado; cada resposta certa vale 10 pontos e o mais rápido a acertar ganha +3
+// Duelo: 10 perguntas em corrida contra um adversário simulado. Ganha quem acertar mais perguntas;
+// os pontos (10 por resposta certa, +3 para o mais rápido) só desempatam
 class DuelView extends View {
   static ROUNDS = 10;
   static LIMIT = 12; // segundos por pergunta
@@ -26,6 +27,7 @@ class DuelView extends View {
     this.me = 0;
     this.them = 0;
     this.right = 0;
+    this.botRight = 0;
     this.used = new Set();
     this.xp = 0;
     this.loadQuestion();
@@ -50,6 +52,12 @@ class DuelView extends View {
   }
 
   get over() { return this.state === "over"; }
+
+  // 1 = ganhaste, 0 = empate, -1 = perdeste: primeiro contam as respostas certas, depois os pontos
+  outcome() {
+    const d = this.right - this.botRight || this.me - this.them;
+    return Math.sign(d);
+  }
   elapsed() { return (Date.now() - this.t0) / 1000; }
 
   render() {
@@ -78,7 +86,7 @@ class DuelView extends View {
   intro() {
     const d = this.duel;
     return `<div><div class="eyebrow">Jogo</div><h1>Duelo ⚔️</h1></div>
-      <section class="panel" style="text-align:center"><p style="margin:0">${DuelView.ROUNDS} perguntas em corrida contra um adversário. Cada resposta certa vale 10 pontos e quem acertar mais depressa ganha +3. Tens ${DuelView.LIMIT} segundos por pergunta.</p>
+      <section class="panel" style="text-align:center"><p style="margin:0">${DuelView.ROUNDS} perguntas em corrida contra um adversário. Ganha quem acertar mais perguntas. Em caso de empate, decidem os pontos: 10 por resposta certa e +3 para quem acertar mais depressa. Tens ${DuelView.LIMIT} segundos por pergunta.</p>
         <p class="muted" style="margin:0">Vitórias: ${d.wins} · Série atual: ${d.streak} · Melhor série: ${d.best}</p>
         <div class="eyebrow">Escolhe o adversário</div>
         <div class="row" style="justify-content:center">${Object.entries(DuelView.BOTS).map(([k, b]) => `<button class="btn" data-action="dstart" data-v="${k}">${b.icon} ${b.name} · ${b.label}</button>`).join("")}</div>
@@ -86,9 +94,9 @@ class DuelView extends View {
   }
 
   overScreen() {
-    const win = this.me > this.them, draw = this.me === this.them, d = this.duel;
+    const win = this.outcome() > 0, draw = this.outcome() === 0, d = this.duel;
     return `<div><div class="eyebrow">Resultado</div><h1>${win ? "Ganhaste! 🏆" : draw ? "Empate 🤝" : "Desta vez perdeste"}</h1></div>
-      <section class="panel"><p style="margin:0">Tu: <b>${this.me}</b> pontos (${this.right} certas) · ${this.esc(this.bot.name)}: <b>${this.them}</b>. Ganhaste ${this.xp} XP.</p>
+      <section class="panel"><p style="margin:0">Tu: <b>${this.right}</b> certas (${this.me} pontos) · ${this.esc(this.bot.name)}: <b>${this.botRight}</b> certas (${this.them} pontos). ${this.right === this.botRight && !draw ? "Empataram nas certas, por isso decidiram os pontos de rapidez. " : ""}Ganhaste ${this.xp} XP.</p>
         <p class="muted" style="margin:0">${win ? `Série de vitórias: ${d.streak}` : "A série de vitórias volta a zero, mas podes tentar de novo."}</p>
         <div class="row"><button class="btn" data-action="dagain">Revanche</button><button class="btn ghost" data-action="dmenu">Mudar de adversário</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
   }
@@ -104,7 +112,7 @@ class DuelView extends View {
     else if (meOk) fasterMe = true;
     else if (botOk) fasterBot = true;
     if (meOk) { this.me += 10 + (fasterMe ? 3 : 0); this.right++; }
-    if (botOk) this.them += 10 + (fasterBot ? 3 : 0);
+    if (botOk) { this.them += 10 + (fasterBot ? 3 : 0); this.botRight++; }
     this.result = { meOk, botOk, fasterMe, fasterBot };
     this.progress.recordStat?.(this.q.word, this.q.type, meOk);
   }
@@ -117,7 +125,7 @@ class DuelView extends View {
 
   finish() {
     this.state = "over";
-    const win = this.me > this.them, draw = this.me === this.them, d = this.duel;
+    const win = this.outcome() > 0, draw = this.outcome() === 0, d = this.duel;
     d.played++;
     if (win) { d.wins++; d.streak++; d.best = Math.max(d.best, d.streak); } else if (!draw) d.streak = 0;
     this.xp = Math.max(2, this.right + (win ? 8 : draw ? 4 : 0));
