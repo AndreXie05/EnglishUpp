@@ -41,17 +41,17 @@ class ChallengeView extends View {
 
   makeQuiz() {
     const T = Question.TYPES;
-    return new Quiz(this.keys(), { dict: this.dict, progress: this.progress, practice: true, types: [T.EN_PT, T.PT_EN], max: 150 });
+    return new Quiz(this.keys(), { dict: this.dict, progress: this.progress, practice: true, types: [T.EN_PT, T.PT_EN, T.IPA, T.IPA_EN], max: 150 });
   }
 
   // Pergunta no ecrã: texto de topo, enunciado e opções { key, label }
   question(q) {
-    const en = q.type === Question.TYPES.EN_PT, w = q.word;
-    return {
-      eyebrow: en ? "O que significa?" : "Como se diz em inglês?",
-      text: en ? w.en : w.pt,
-      options: q.options.map(o => ({ key: o.key, label: en ? o.pt : o.en })),
-    };
+    const T = Question.TYPES, w = q.word;
+    const [eyebrow, text] = {
+      [T.EN_PT]: ["O que significa?", w.en], [T.PT_EN]: ["Como se diz em inglês?", w.pt],
+      [T.IPA]: ["Qual é a pronúncia certa?", w.en], [T.IPA_EN]: ["Que palavra tem esta pronúncia?", `/${w.ipa}/`],
+    }[q.type];
+    return { eyebrow, text, options: q.options.map(o => ({ key: o.key, label: GameView.label(q, o) })) };
   }
 
   start() {

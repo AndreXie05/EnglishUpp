@@ -159,9 +159,6 @@ class App {
       case "adventures":
         this.show(new AdventureView(this));
         break;
-      case "diary":
-        this.show(new DiaryView(this));
-        break;
       case "vchallenge":
         this.show(new VerbChallengeView(this));
         break;

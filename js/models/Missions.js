@@ -11,7 +11,6 @@ class Missions {
     ["xp100", "Ganha 25 XP", 25, "xp", 10],
     ["review1", "Faz uma revisão dos teus erros", 1, "review", 8],
     ["cards15", "Revê 15 cartões", 15, "cards", 6],
-    ["diary1", "Escreve no diário", 1, "diary", 8],
     ["game1", "Joga um jogo (forca, memória ou frases)", 1, "games", 6],
   ];
 
@@ -24,7 +23,6 @@ class Missions {
     ["xp600", "Ganha 120 XP", 120, "xp", 30],
     ["timed5", "Joga 5 desafios de 60 segundos", 5, "timed", 25],
     ["review3", "Faz 3 revisões dos teus erros", 3, "review", 30],
-    ["diary3", "Escreve no diário em 3 dias", 3, "diary", 25],
     ["games5", "Joga 5 jogos", 5, "games", 25],
   ];
 
@@ -53,9 +51,8 @@ class Missions {
   // Missões de hoje e da semana, com o progresso de cada uma
   static active(p) {
     const today = DateUtils.today(), week = Missions.weekStart(today);
-    // Sem erros por rever, a missão de revisão não faz sentido (mas fica se já a começaste hoje).
-    // O diário já não tem aba, por isso as missões de diário saem
-    const usable = list => (p.hasErrors() || p.day().review ? list : list.filter(m => m[3] !== "review")).filter(m => m[3] !== "diary");
+    // Sem erros por rever, a missão de revisão não faz sentido (mas fica se já a começaste hoje)
+    const usable = list => p.hasErrors() || p.day().review ? list : list.filter(m => m[3] !== "review");
     const build = (list, scope, seed, from) => list.map(([id, title, target, metric, reward]) => {
       const key = `${scope}:${seed}:${id}`;
       const value = Math.min(target, Missions.value(p, metric, from, today));

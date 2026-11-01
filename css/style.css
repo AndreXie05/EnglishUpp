@@ -204,14 +204,6 @@ button.vrow:hover{background:var(--card)}
 .vtable thead th{font-family:var(--body);font-size:.78rem;color:var(--muted);font-weight:700}
 .vtable tbody th{font-family:var(--body);font-weight:700}
 
-/* Escrita: ordenar frases e completar textos */
-.clozetext{line-height:2.4;font-size:1.05rem;margin:0}
-input.cin{display:inline-block;width:auto;min-width:6ch;font-size:1rem;padding:3px 8px;border-radius:6px;margin:0 2px}
-input.cin::placeholder{font-size:.78rem;color:var(--muted)}
-.cl{display:inline-block;border-radius:6px;padding:1px 8px;font-weight:700}
-.cl.ok{background:var(--good-bg);color:var(--good)}
-.cl.no{background:var(--bad-bg);color:var(--bad)}
-.cl.almost{background:var(--hi);color:var(--hi-ink)}
 
 /* Textos práticos */
 .dl{margin:0 0 8px;line-height:1.5}

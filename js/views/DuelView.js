@@ -14,7 +14,7 @@ class DuelView extends View {
     this.state = "intro";
     this.words = GameView.words(app);
     const T = Question.TYPES;
-    this.factory = new Quiz([this.dict.themes[0].words[0].key], { dict: this.dict, progress: this.progress, practice: true, types: [T.EN_PT, T.PT_EN, T.FILL], max: 1 });
+    this.factory = new Quiz([this.dict.themes[0].words[0].key], { dict: this.dict, progress: this.progress, practice: true, types: GameView.TYPES(), max: 1 });
   }
 
   get tab() { return "jogo"; }
@@ -64,12 +64,9 @@ class DuelView extends View {
     if (this.words.length < 20) return GameView.needWords("Duelo");
     if (this.state === "intro") return this.intro();
     if (this.over) return this.overScreen();
-    const q = this.q, w = q.word, T = Question.TYPES, a = this.chosen !== null;
-    let prompt;
-    if (q.type === T.EN_PT) prompt = `<div class="eyebrow">O que significa?</div><div class="q">${this.esc(w.en)}</div><div class="ipa">/${this.esc(w.ipa)}/</div>`;
-    else if (q.type === T.PT_EN) prompt = `<div class="eyebrow">Como se diz em inglês?</div><div class="q">${this.esc(w.pt)}</div>`;
-    else prompt = `<div class="eyebrow">Escolhe a palavra que falta</div><p class="sentence">${Sentence.render(q.sentence.en, this.dict.theme(w.themeId), a ? null : w.key)}</p>`;
-    const label = o => q.type === T.EN_PT ? o.pt : o.en;
+    const q = this.q, w = q.word, a = this.chosen !== null;
+    const prompt = GameView.prompt(this, q, a);
+    const label = o => GameView.label(q, o);
     const opts = q.options.map((o, k) => `<button class="opt qsopt ${a ? (o.key === w.key ? "ok" : o.key === this.chosen ? "no" : "") : ""}" data-action="dpick" data-v="${this.esc(o.key)}" ${a ? "disabled" : ""}><b>${k + 1}</b> ${this.esc(label(o))}</button>`).join("");
     const max = DuelView.ROUNDS * 13;
     const bar = (icon, name, pts, cls) => `<div class="duelrow"><span>${icon} ${this.esc(name)}</span><div class="duelbar"><i class="${cls}" style="width:${Math.min(100, pts / max * 100)}%"></i></div><b>${pts}</b></div>`;

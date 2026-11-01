@@ -1,4 +1,4 @@
-// Escape room (separador próprio): escolhes uma sala com uma história e abres 10 cadeados antes de o tempo acabar.
+// Escape room (dentro do Jogo): escolhes uma sala com uma história e abres 10 cadeados antes de o tempo acabar.
 // Cada cadeado só abre com a resposta certa; um erro tira 30 segundos e o cadeado pede outra pergunta.
 class EscapeView extends View {
   static LOCKS = 10;
@@ -13,7 +13,7 @@ class EscapeView extends View {
   }
 
   // sem o botão do dicionário: na sala é tudo de memória
-  get tab() { return "escape"; }
+  get tab() { return "jogo"; }
   get best() { return (this.progress.data.escape ||= {}); }
 
   // Palavras da sala com a pronúncia e a tradução do Dicionário
@@ -81,7 +81,7 @@ class EscapeView extends View {
       return `<button class="gcard g7" data-action="escstart" data-v="${r.id}"><span class="gicon" aria-hidden="true">${r.icon}</span><span class="gname">${this.esc(r.name)}</span>
         <span class="gdesc">${b != null ? `✅ Escapaste · melhor: ${EscapeView.clock(b)} de sobra` : "Ainda não escapaste"}</span></button>`;
     };
-    return `<div><div class="eyebrow">Escape room</div><h1>Escolhe a sala 🔐</h1></div>
+    return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Escape room</span><button class="linkbtn" data-action="nav" data-v="jogo">← Voltar ao Jogo</button></div><h1>Escolhe a sala 🔐</h1>
       <p class="muted" style="margin:0">Cada sala tem ${EscapeView.LOCKS} cadeados e ${EscapeView.TIME / 60} minutos. Os cadeados só abrem com a resposta certa: como se pronuncia uma palavra, o que significa, que palavra falta numa frase ou como se escreve. Cada erro tira ${EscapeView.PENALTY} segundos.</p>
       <div class="gamegrid">${ESCAPE_ROOMS.map(card).join("")}
         <button class="gcard g3" data-action="escstart" data-v=""><span class="gicon" aria-hidden="true">🎲</span><span class="gname">Sala surpresa</span><span class="gdesc">Uma sala à sorte</span></button></div>`;

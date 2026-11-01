@@ -11,7 +11,7 @@ class QuizShowView extends View {
     const studied = this.dict.themes.filter(t => this.progress.lesson(t.id));
     const idx = studied.length ? Math.max(...studied.map(t => QuizShowView.LEVELS.indexOf(t.level))) : 1;
     this.maxLevel = Math.max(1, idx);
-    this.factory = new Quiz([this.dict.themes[0].words[0].key], { dict: this.dict, progress: this.progress, practice: true, types: [T.EN_PT, T.PT_EN, T.FILL], max: 1 });
+    this.factory = new Quiz([this.dict.themes[0].words[0].key], { dict: this.dict, progress: this.progress, practice: true, types: GameView.TYPES(), max: 1 });
   }
 
   get tab() { return "jogo"; }
@@ -62,16 +62,20 @@ class QuizShowView extends View {
     if (this.state === "intro") return this.intro();
     if (this.state === "over") return this.overScreen();
     const q = this.q, w = q.word, T = Question.TYPES, a = this.chosen !== null;
-    let prompt;
-    if (q.type === T.EN_PT) prompt = `<div class="eyebrow">O que significa?</div><div class="q">${this.esc(w.en)}</div><div class="ipa">/${this.esc(w.ipa)}/</div>`;
-    else if (q.type === T.PT_EN) prompt = `<div class="eyebrow">Como se diz em inglês?</div><div class="q">${this.esc(w.pt)}</div>`;
-    else prompt = `<div class="eyebrow">Escolhe a palavra que falta</div><p class="sentence">${Sentence.render(q.sentence.en, this.dict.theme(w.themeId), a ? null : w.key)}</p>`;
-    const label = o => q.type === T.EN_PT ? o.pt : `${o.en}`;
-    // Opções em inglês mostram a pronúncia; depois de responder, cada opção mostra o que significa
+    const prompt = GameView.prompt(this, q, a);
+    const label = o => GameView.label(q, o);
+    // Opções com palavras inglesas mostram a pronúncia (menos quando a pergunta é a própria pronúncia);
+    // depois de responder, cada opção mostra o que significa
     const optHtml = o => {
-      const ipa = ` <span class="ipa">/${this.esc(o.ipa)}/</span>`;
-      if (q.type === T.EN_PT) return this.esc(o.pt) + (a ? `<small class="qsmean">= ${this.esc(o.en)}${ipa}</small>` : "");
-      return this.esc(o.en) + ipa + (a ? `<small class="qsmean">= ${this.esc(o.pt)}</small>` : "");
+      const ipa = ` <span class="ipa">/${this.esc(o.ipa)}/</span>`, mean = html => a ? `<small class="qsmean">= ${html}</small>` : "";
+      switch (q.type) {
+        case T.EN_PT: case T.CTX: return this.esc(o.pt) + mean(this.esc(o.en) + ipa);
+        case T.IPA: return this.esc(label(o)) + mean(`${this.esc(o.en)} (${this.esc(o.pt)})`);
+        case T.SENT_PT: return this.esc(o.exPt) + mean(this.esc(o.exEn));
+        case T.SENT_EN: return this.esc(o.exEn) + mean(this.esc(o.exPt));
+        case T.IPA_EN: return this.esc(o.en) + (a ? ipa : "") + mean(this.esc(o.pt));
+        default: return this.esc(o.en) + ipa + mean(this.esc(o.pt));
+      }
     };
     const opts = q.options.map((o, k) => {
       const gone = this.hidden.has(o.key);

@@ -519,17 +519,6 @@ class Progress {
     return Object.entries(this.data.words[key]?.mix || {}).sort((a, b) => b[1] - a[1]).slice(0, n).map(e => e[0]);
   }
 
-  // Diário de escrita: guarda as últimas 20 entradas; só dá XP à primeira de cada dia
-  addDiary(text, issues) {
-    this.data.diary.push({ date: DateUtils.today(), text, issues });
-    this.data.diary = this.data.diary.slice(-20);
-    this.exerciseDone("diary");
-    if (this.day().diary) return 0;
-    this.addXp(5);
-    this.bump("diary");
-    return 5;
-  }
-
   reset() {
     this.data = Progress.blank();
   }
