@@ -29,7 +29,6 @@ class Progress {
     this.data.badges = this.data.badges || {};
     this.data.mis = this.data.mis || {};
     this.data.diary = this.data.diary || [];
-    this.data.claimed = this.data.claimed || {};
     this.purgeCounts();
     this.purgeRounds();
   }
@@ -174,7 +173,6 @@ class Progress {
     Object.keys(this.data.counts).forEach(d => { if (d < limit) delete this.data.counts[d]; });
     Object.keys(this.data.done).forEach(d => { if (d < limit) delete this.data.done[d]; });
     Object.keys(this.data.mis).forEach(d => { if (d < limit) delete this.data.mis[d]; });
-    Object.keys(this.data.claimed).forEach(k => { if (k.split(":")[1] < limit) delete this.data.claimed[k]; });
   }
 
   markActive() {
@@ -241,11 +239,6 @@ class Progress {
     return theme.words.filter(w => (this.wordState(w.key)?.box || 0) >= Progress.MASTERED_BOX).length;
   }
 
-  // Palavras que já acertaste pelo menos uma vez no teste diário, mas ainda não estão dominadas
-  learningInTheme(theme) {
-    return theme.words.filter(w => { const s = this.wordState(w.key), b = s?.box || 0; return (b >= 1 || (s?.pc || 0) >= 3) && b < Progress.MASTERED_BOX; }).length;
-  }
-
   finishLesson(theme) {
     const tomorrow = DateUtils.addDays(DateUtils.today(), 1);
     if (!this.data.lessons[theme.id]) {
@@ -270,13 +263,6 @@ class Progress {
     const w = this.data.words[key];
     if (!w || w.box >= 1) return;
     w.pc = (w.pc || 0) + 1;
-  }
-
-  // Fora do teste diário (escrita, ordenar, completar): um erro conta sempre, um acerto só se a palavra já estava para rever,
-  // senão dava para subir várias caixas no mesmo dia
-  recordIfDue(key, correct) {
-    const w = this.data.words[key];
-    if (w && (!correct || w.due <= DateUtils.today())) this.recordAnswer(key, correct);
   }
 
   // Acerto: sobe de caixa e volta mais tarde. Erro: volta à caixa 0 e aparece amanhã
@@ -364,12 +350,7 @@ class Progress {
     return (this.data.rounds || []).reduce((n, r) => n + r.points, 0);
   }
 
-  // Dias que faltam para o treino desaparecer
-  daysLeft(round) {
-    return Math.max(1, Math.ceil((round.at + Progress.ROUND_LIFETIME_DAYS * 86400000 - Date.now()) / 86400000));
-  }
-
-  /* ----- jogo: XP, níveis, desafio e contadores diários das missões ----- */
+  /* ----- jogo: XP, níveis, desafio e contadores diários ----- */
 
   // XP necessário para chegar ao nível n (cada nível custa mais 100 XP que o anterior)
   static xpFor(n) {
@@ -442,12 +423,6 @@ class Progress {
     return key;
   }
 
-  // Quantas das chaves já saíram neste baralho
-  deckSeen(name, keys) {
-    const seen = new Set(this.data.deck[name] || []);
-    return keys.filter(k => seen.has(k)).length;
-  }
-
   // Resposta à primeira tentativa: guarda acertos e erros por classe de palavra, tema e tipo de exercício
   recordStat(word, type, ok) {
     const st = this.data.stats;
@@ -477,12 +452,6 @@ class Progress {
     this.exerciseDone("review");
     if (percent >= 60) this.addXp(3);
     this.bump("review");
-  }
-
-  // Há erros por rever? (palavras mal sabidas, gramática, perguntas de textos)
-  hasErrors() {
-    return Object.values(this.data.words).some(w => w.wrong > 0 && w.box < Progress.MASTERED_BOX && !w.rv)
-      || Object.keys(this.data.errs.g).length > 0 || Object.keys(this.data.errs.r).length > 0;
   }
 
   // Desafio de 60 segundos (palavras ou verbos): devolve o XP ganho

@@ -56,23 +56,6 @@ class Celebration {
     setTimeout(() => el.remove(), 4500);
   }
 
-  // Missão cumprida: cartão ao meio do ecrã, mais discreto que a festa da sequência.
-  // Se a festa da sequência estiver a decorrer, espera que acabe para não se taparem
-  static missions(list) {
-    if (document.getElementById("streakfx")) return void setTimeout(() => Celebration.missions(list), 1000);
-    document.getElementById("missionfx")?.remove();
-    const el = document.createElement("div");
-    el.id = "missionfx";
-    el.className = "missionfx";
-    el.setAttribute("role", "status");
-    el.innerHTML = `<div class="mbox"><div class="mico" aria-hidden="true">🎯</div>
-      <div class="mtitle">${list.length === 1 ? "Missão cumprida!" : `${list.length} missões cumpridas!`}</div>
-      ${list.map(m => `<div class="mline">${Utils.esc(m)}</div>`).join("")}</div>`;
-    el.addEventListener("click", () => el.remove());
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
-
   // Contador (3/9) ao meio do ecrã, sem tapar cliques, que aparece um instante depois de cada exercício
   static tick(done, goal) {
     document.getElementById("tickfx")?.remove();

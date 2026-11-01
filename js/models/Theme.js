@@ -19,10 +19,6 @@ class Theme {
     return this.words.length;
   }
 
-  findWord(text) {
-    return this.words.find(w => w.en.toLowerCase() === text.toLowerCase());
-  }
-
   // Palavras que não se flexionam e que, com terminação, apanhavam outras (hi → his, Mr → Mrs)
   static FIXED = new Set(["hi", "mr", "ok", "tv"]);
 

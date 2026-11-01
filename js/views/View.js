@@ -21,6 +21,25 @@ class View {
   // Chamado depois de o HTML estar na página (foco, eventos de escrita, etc.)
   afterRender() {}
 
+  // Texto inglês com cada palavra num botão (action com a palavra em minúsculas); active = palavra escolhida
+  tappable(text, active, action) {
+    return text.split(/(\s+)/).map(tok => {
+      const m = tok.match(/^([^A-Za-zÀ-ÿ]*)([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*?)([^A-Za-zÀ-ÿ]*)$/);
+      if (!m) return this.esc(tok);
+      const w = m[2].toLowerCase().replace(/’/g, "'");
+      return `${this.esc(m[1])}<button class="lw ${active === w ? "on" : ""}" data-action="${action}" data-v="${this.esc(w)}">${this.esc(m[2])}</button>${this.esc(m[3])}`;
+    }).join("");
+  }
+
+  // Significado e pronúncia de uma palavra tocada (pelo dicionário, com went → go, cats → cat…)
+  wordBox(w) {
+    const e = this.dict.findEntry(w), ipa = this.app.ipa.word(w), full = TextDiff.CONTRACTIONS[w];
+    return `<div class="wordbox"><b>${this.esc(w)}</b>${ipa ? ` <span class="ipa">/${this.esc(ipa)}/</span>` : ""}
+      ${e ? `<span>= ${this.esc(e.pt)}</span>${e.en.toLowerCase() !== w ? ` <span class="muted">(de <i>${this.esc(e.en)}</i>)</span>` : ""}`
+        : full ? `<span>= forma curta de <i>${this.esc(full)}</i></span>`
+        : `<span class="muted">não está no dicionário: o sentido vê-se na tradução</span>`}</div>`;
+  }
+
   // Trata ações próprias do ecrã; devolve true se tratou
   onAction(action, value, el) {
     return false;

@@ -10,6 +10,7 @@ class HomeView extends View {
       ${this.gameCard()}
       ${this.goalCard()}
       ${this.wordsOfMomentCard()}
+      ${this.storyCard()}
       ${this.dailyChallengeCard()}
       ${this.planCard()}
       ${this.errorsBanner()}
@@ -22,6 +23,16 @@ class HomeView extends View {
       <div class="sync">${this.esc(this.app.storage.label)}</div>`;
   }
 
+  // Modo história: aviso quando há um capítulo aberto por ler
+  storyCard() {
+    const n = StoryView.nextUnread(this.app);
+    if (!n) return "";
+    return `<section class="panel"><div class="eyebrow">📖 Modo história · ${n.city.flag} ${this.esc(n.city.city)}</div>
+      <h2>Capítulo ${n.n}: ${this.esc(n.chapter.title)} ${n.chapter.icon}</h2>
+      <p class="muted" style="margin:0">${n.n === 1 && n.city.id === STORY[0].id ? "Conhece o Leo e começa a viagem dele pelo mundo de língua inglesa." : "Há um capítulo novo da viagem do Leo à tua espera."}</p>
+      <div class="row"><button class="btn small" data-action="storyopen" data-v="${n.chapter.id}">Ler agora</button></div></section>`;
+  }
+
   // Lembrete discreto: sem cópia de segurança há 7 dias (ou nunca, depois de começares a estudar)
   backupReminder() {
     const p = this.progress, last = p.data.backupAt;
@@ -31,12 +42,10 @@ class HomeView extends View {
       <div class="row"><button class="btn small" data-action="nav" data-v="progresso">Fazer cópia agora</button></div></section>`;
   }
 
-  // Nível e missões de hoje, com atalho para o Jogo
+  // Nível, com atalho para o Jogo
   gameCard() {
-    const m = Missions.active(this.progress).daily;
-    const n = m.filter(x => x.claimed).length;
     return `<section class="panel">${GameView.playerCard(this.progress)}
-      <div class="row" style="justify-content:space-between"><span class="muted">Missões de hoje: ${n} de ${m.length}</span><button class="btn small" data-action="nav" data-v="jogo">Abrir o Jogo</button></div></section>`;
+      <div class="row" style="justify-content:flex-end"><button class="btn small" data-action="nav" data-v="jogo">Abrir o Jogo</button></div></section>`;
   }
 
   // Meta diária: a roleta decide quantos exercícios são precisos para a sequência subir hoje
@@ -173,6 +182,9 @@ class HomeView extends View {
 
   onAction(action, value) {
     switch (action) {
+      case "storyopen":
+        this.app.show(new StoryView(this.app, value));
+        return true;
       case "dchallenge":
         this.app.show(new GrammarQuizView(this.app, new GrammarQuiz(DailyFun.challengeLesson(this.app))));
         return true;

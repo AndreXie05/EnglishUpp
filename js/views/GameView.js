@@ -1,4 +1,4 @@
-// Jogo: nível e XP, missões, desafio de 60 segundos e mapa de aventura
+// Jogo: nível e XP, desafio de 60 segundos, jogos e mapa de aventura
 class GameView extends View {
   constructor(app, level = null) {
     super(app);
@@ -14,7 +14,6 @@ class GameView extends View {
   render() {
     return `<div><div class="eyebrow">Jogo</div><h1>Nível ${this.progress.level}</h1></div>
       ${GameView.playerCard(this.progress)}
-      ${this.missionsPanel()}
       <section class="panel"><div class="eyebrow">Desafio</div><h2>60 segundos</h2>
         <p class="muted" style="margin:0">Acerta o máximo de palavras antes de o tempo acabar. Recorde: ${this.progress.data.challengeBest || 0}.</p>
         <div class="row"><button class="btn" data-action="challenge">Jogar</button></div></section>
@@ -114,6 +113,7 @@ class GameView extends View {
         `<button data-action="gscope" data-v="${v}" aria-pressed="${(this.progress.data.gameScope || "all") === v}">${l}</button>`).join("")}</div>
       <div class="gamegrid">
         ${[
+          ["game", "story", "🗺️", "Modo história", "A viagem do Leo, capítulo a capítulo", 6],
           ["nav", "escape", "🔐", "Escape room", "Abre 10 cadeados antes do tempo acabar", 2],
           ["game", "hangman", "🪢", "Forca", "Adivinha a palavra letra a letra", 1],
           ["game", "scramble", "🧩", "Frases", "Põe as palavras na ordem certa", 3],
@@ -163,18 +163,6 @@ class GameView extends View {
       <span class="muted" style="font-size:.9rem">${p.xp} XP · faltam ${to - p.xp} para o nível ${lv + 1}</span></section>`;
   }
 
-  // As missões cumpridas desaparecem; as novas chegam no dia seguinte (diárias) ou na semana seguinte
-  missionsPanel() {
-    const { daily, weekly } = Missions.active(this.progress);
-    const row = m => `<div class="mission">
-      <div class="row" style="justify-content:space-between"><span>${this.esc(m.title)}</span><span class="pill">+${m.reward} XP</span></div>
-      <div class="bar"><i style="width:${Math.round(m.value / m.target * 100)}%"></i></div>
-      <span class="muted" style="font-size:.8rem">${m.value} de ${m.target}</span></div>`;
-    const list = (ms, none) => ms.filter(m => !m.claimed).map(row).join("") || `<p class="muted" style="margin:0">${none}</p>`;
-    return `<section class="panel"><div class="eyebrow">Missões de hoje</div>${list(daily, "Cumpriste todas! Amanhã há missões novas.")}
-      <div class="eyebrow" style="margin-top:6px">Missões da semana</div>${list(weekly, "Cumpriste todas! Na segunda-feira há missões novas.")}</section>`;
-  }
-
   // Caminho com uma etapa por lição e o exame final como chefe
   mapPanel() {
     const level = this.currentLevel;
@@ -211,7 +199,7 @@ class GameView extends View {
         this.app.show(new ChallengeView(this.app));
         return true;
       case "game": {
-        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView };
+        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView, story: StoryView };
         this.app.show(new views[value](this.app));
         return true;
       }

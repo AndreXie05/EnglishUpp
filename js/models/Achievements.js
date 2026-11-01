@@ -43,10 +43,6 @@ class Achievements {
     return Achievements.ART[id] || ["⭐", 1];
   }
 
-  static unlocked(p) {
-    return Achievements.LIST.filter(([id]) => p.data.badges[id]);
-  }
-
   // Marca as conquistas novas e devolve os títulos
   static update(progress) {
     const ctx = { p: progress };

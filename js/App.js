@@ -80,7 +80,6 @@ class App {
 
   save() {
     const won = Achievements.update(this.progress);
-    const done = Missions.update(this.progress);
     // Sequência: festa na primeira vez que a meta de hoje fica cumprida
     const today = DateUtils.today();
     if (this.progress.data.days.includes(today) && this.progress.data.streakShown !== today) {
@@ -94,7 +93,6 @@ class App {
     const lv = this.progress.level;
     const msgs = [];
     if (won.length) msgs.push(`Conquista: ${won.join(", ")}`);
-    if (done.length) Celebration.missions(done);
     if (lv > (this.progress.data.lvl || 1)) msgs.push(`Subiste ao nível ${lv}: ${Rank.title(lv)}!`);
     this.progress.data.lvl = lv;
     if (msgs.length) this.toast.show(msgs.join(" · "));

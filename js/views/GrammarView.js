@@ -27,7 +27,7 @@ class GrammarView extends View {
   static SECTIONS = [["lessons", "📐", "Lições"], ["verbs", "🔁", "Verbos"], ["tenses", "📘", "Tempos verbais"], ["preps", "📍", "Preposições"]];
 
   static sections(view, active) {
-    return `<div class="gswitch" role="group" aria-label="Partes da gramática">${GrammarView.SECTIONS.map(([k, icon, name]) =>
+    return `<div class="tabs" role="group" aria-label="Partes da gramática">${GrammarView.SECTIONS.map(([k, icon, name]) =>
       `<button data-action="gsection" data-v="${k}" aria-pressed="${k === active}"><span aria-hidden="true">${icon}</span> ${name}</button>`).join("")}</div>`;
   }
 

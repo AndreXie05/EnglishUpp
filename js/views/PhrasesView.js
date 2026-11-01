@@ -28,7 +28,7 @@ class PhrasesView extends View {
   }
 
   modeSwitch() {
-    return `<div class="gswitch two" role="group" aria-label="Tipo de frases">${[["situations", "💬", "Por situação"], ["loose", "🎲", "Frases soltas"]].map(([k, icon, name]) =>
+    return `<div class="tabs" role="group" aria-label="Tipo de frases">${[["situations", "💬", "Por situação"], ["loose", "🎲", "Frases soltas"]].map(([k, icon, name]) =>
       `<button data-action="pmode" data-v="${k}" aria-pressed="${this.mode === k}"><span aria-hidden="true">${icon}</span> ${name}</button>`).join("")}</div>`;
   }
 
@@ -82,12 +82,7 @@ class PhrasesView extends View {
     const tabs = `<div class="tabs" role="group" aria-label="Nível"><button data-action="plooselevel" data-v="" aria-pressed="${!this.looseLevel}">Todas</button>${levels.map(l =>
       `<button data-action="plooselevel" data-v="${l}" aria-pressed="${this.looseLevel === l}">${l}</button>`).join("")}</div>`;
     const color = ThemesView.LEVEL_COLORS[x.level] || "var(--accent)";
-    const words = x.en.split(/(\s+)/).map(tok => {
-      const m = tok.match(/^([^A-Za-z]*)([A-Za-z][A-Za-z'’-]*)(.*)$/);
-      if (!m) return this.esc(tok);
-      const w = m[2].toLowerCase();
-      return `${this.esc(m[1])}<button class="lw ${this.wordInfo === w ? "on" : ""}" data-action="pword" data-v="${this.esc(w)}">${this.esc(m[2])}</button>${this.esc(m[3])}`;
-    }).join("");
+    const words = this.tappable(x.en, this.wordInfo, "pword");
     const ipa = this.app.ipa.of(x.en);
     return `<div><div class="eyebrow">${total} frases para vocabulário e pronúncia</div><h1>Frases úteis</h1></div>
       ${this.modeSwitch()}
@@ -104,14 +99,6 @@ class PhrasesView extends View {
         <button class="linkbtn" data-action="pshuffle">🔀 Baralhar</button>
         <button class="btn" data-action="pstep" data-v="1">Seguinte →</button></div>
       <p class="muted" style="margin:0;font-size:.85rem;text-align:center">Teclas: ← → para mudar · Enter para ver a tradução</p>`;
-  }
-
-  // Significado e pronúncia de uma palavra da frase (pelo dicionário, com went → go, cats → cat…)
-  wordBox(w) {
-    const e = this.dict.findEntry(w), ipa = this.app.ipa.word(w);
-    return `<div class="wordbox"><b>${this.esc(w)}</b>${ipa ? ` <span class="ipa">/${this.esc(ipa)}/</span>` : ""}
-      ${e ? `<span>= ${this.esc(e.pt)}</span>${e.en.toLowerCase() !== w ? ` <span class="muted">(de <i>${this.esc(e.en)}</i>)</span>` : ""}`
-        : `<span class="muted">palavra de ligação: o sentido vê-se na tradução da frase</span>`}</div>`;
   }
 
   onKey(e) {

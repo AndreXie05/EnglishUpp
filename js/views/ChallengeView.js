@@ -51,7 +51,11 @@ class ChallengeView extends View {
       [T.EN_PT]: ["O que significa?", w.en], [T.PT_EN]: ["Como se diz em inglês?", w.pt],
       [T.IPA]: ["Qual é a pronúncia certa?", w.en], [T.IPA_EN]: ["Que palavra tem esta pronúncia?", `/${w.ipa}/`],
     }[q.type];
-    return { eyebrow, text, options: q.options.map(o => ({ key: o.key, label: GameView.label(q, o) })) };
+    // A pronúncia aparece com as palavras inglesas (menos nas perguntas que são sobre a própria pronúncia)
+    return {
+      eyebrow, text, ipa: q.type === T.EN_PT ? w.ipa : null, sub: q.type === T.IPA ? w.pt : null,
+      options: q.options.map(o => ({ key: o.key, label: GameView.label(q, o), ipa: q.type === T.PT_EN ? o.ipa : null })),
+    };
   }
 
   start() {
@@ -82,11 +86,11 @@ class ChallengeView extends View {
     const q = this.quiz.current, a = this.quiz.answered, v = this.question(q);
     const opts = v.options.map(o => {
       const state = a ? (q.isCorrect(o.key) ? "ok" : o.key === a.given ? "no" : "") : "";
-      return `<button class="opt ${state}" data-action="cpick" data-v="${this.esc(o.key)}" ${a ? "disabled" : ""}>${this.esc(o.label)}</button>`;
+      return `<button class="opt ${state}" data-action="cpick" data-v="${this.esc(o.key)}" ${a ? "disabled" : ""}>${this.esc(o.label)}${o.ipa ? `<small class="ipa" style="display:block">/${this.esc(o.ipa)}/</small>` : ""}</button>`;
     }).join("");
     return `<div class="row" style="justify-content:space-between"><span class="eyebrow">${this.quiz.score} certas${this.combo >= 3 ? ` · combo ×${this.combo}` : ""}</span><strong id="ctime">${Math.ceil(this.left())} s</strong></div>
       <div class="bar"><i id="cbar" style="width:${this.left() / ChallengeView.SECONDS * 100}%"></i></div>
-      <section class="panel" style="gap:16px"><div class="eyebrow">${this.esc(v.eyebrow)}</div><div class="q">${this.esc(v.text)}</div><div class="opts">${opts}</div></section>`;
+      <section class="panel" style="gap:16px"><div class="eyebrow">${this.esc(v.eyebrow)}</div><div class="q">${this.esc(v.text)}</div>${v.ipa ? `<div class="ipa">/${this.esc(v.ipa)}/</div>` : ""}${v.sub ? `<div class="muted">${this.esc(v.sub)}</div>` : ""}<div class="opts">${opts}</div></section>`;
   }
 
   pick(value) {

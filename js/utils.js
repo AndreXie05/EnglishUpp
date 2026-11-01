@@ -54,25 +54,6 @@ class Utils {
     return s.toLowerCase().replace(/[^a-z' ]/g, " ").replace(/\s+/g, " ").trim();
   }
 
-  // Número mínimo de letras a mudar para transformar a em b
-  static levenshtein(a, b) {
-    const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-    for (let i = 1; i <= a.length; i++) {
-      let diag = prev[0];
-      prev[0] = i;
-      for (let j = 1; j <= b.length; j++) {
-        const tmp = prev[j];
-        prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-        diag = tmp;
-      }
-    }
-    return prev[b.length];
-  }
-
-  static countWords(text) {
-    return (text.match(/[A-Za-z']+/g) || []).length;
-  }
-
   static cambridgeUrl(word) {
     return "https://dictionary.cambridge.org/dictionary/english-portuguese/" +
       encodeURIComponent(word.toLowerCase().replace(/ /g, "-"));
