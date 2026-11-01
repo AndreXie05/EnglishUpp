@@ -157,9 +157,13 @@ class App {
       case "adventures":
         this.show(new AdventureView(this));
         break;
-      case "vchallenge":
-        this.show(new VerbChallengeView(this));
+      case "vchallenge": {
+        // O desafio de verbos começa logo, sem ecrã de apresentação
+        const view = new VerbChallengeView(this);
+        this.show(view);
+        view.begin();
         break;
+      }
       case "startTest":
         this.startQuiz(this.progress.dueKeys(this.dict), false);
         break;

@@ -31,7 +31,7 @@ class TextsView extends View {
     const items = inLevel.filter(t => !this.kind || t.kind === this.kind);
     return `<div><div class="eyebrow">${this.texts.length} textos</div><h1>Textos</h1></div>
       <p class="muted" style="margin:0">Diálogos, emails, mensagens, avisos e cartas como os que vais encontrar na vida real. Lê e responde às perguntas.</p>
-      <div class="tabs" role="group" aria-label="Nível">${ProgressView.LEVELS.map(([code]) => {
+      <div class="tabs lvtabs" role="group" aria-label="Nível">${ProgressView.LEVELS.map(([code]) => {
         const n = this.texts.filter(t => t.level === code).length;
         return `<button data-action="tlevel" data-v="${code}" aria-pressed="${code === level}">${code}<span class="tabcount">${n || "em breve"}</span></button>`;
       }).join("")}</div>
@@ -43,15 +43,20 @@ class TextsView extends View {
 
   static ICONS = { dialogue: "💬", email: "✉️", message: "📱", letter: "💌", notice: "📌", ad: "📢", review: "⭐", blog: "📝", news: "📰", report: "📊", speech: "🎤", essay: "📚", interview: "🎙️" };
 
+  // Cartão de um texto, no mesmo estilo das lições: faixa com o tipo, título, e uma casa por pergunta (cheias = certas)
   card(t) {
-    const best = this.progress.data.texts[t.id];
-    const band = Progress.band(this.progress.textScore(t.id, t.questions.length));
-    const pill = best == null ? `<span class="pill">Novo</span>` : `<span class="schip ${band}">${best}/${t.questions.length}</span>`;
-    return `<button class="theme tcard ${band}" style="--lc:${ThemesView.LEVEL_COLORS[t.level] || "var(--accent)"}" data-action="topen" data-v="${t.id}">
-      ${best != null ? `<span class="ribbon" aria-hidden="true">Feito</span>` : ""}
-      <div class="row" style="justify-content:space-between;width:100%"><span class="ticon" aria-hidden="true">${TextsView.ICONS[t.kind] || "📄"}</span>${pill}</div>
-      <span class="eyebrow tnum">${this.esc(t.kindLabel)} · ${t.level}</span>
-      <span class="t">${this.esc(t.title)}</span><span class="muted" style="font-size:.9rem">${t.wordCount} palavras · ${t.questions.length} perguntas</span></button>`;
+    const best = this.progress.data.texts[t.id], total = t.questions.length;
+    const band = Progress.band(this.progress.textScore(t.id, total));
+    const state = best == null ? "new" : best === total ? "done" : "doing";
+    const badge = best == null ? "Novo" : best === total ? "✓ Perfeito" : "Feito";
+    const segs = t.questions.map((_, k) => `<i class="${best != null && k < best ? "on" : ""}"></i>`).join("");
+    return `<button class="lcard ${state}" style="--lc:${ThemesView.LEVEL_COLORS[t.level] || "var(--accent)"}" data-action="topen" data-v="${t.id}">
+      <span class="lc-top"><span class="lc-icon" aria-hidden="true">${TextsView.ICONS[t.kind] || "📄"}</span>
+        <span class="lc-num">${this.esc(t.kindLabel)}</span><span class="lc-badge">${badge}</span></span>
+      <span class="lc-body"><span class="lc-title">${this.esc(t.title)}</span>
+        <span class="lc-sub">${t.wordCount} palavras · ${total} perguntas</span></span>
+      <span class="lc-foot"><span class="lc-parts" style="grid-template-columns:repeat(${total},1fr)" role="img" aria-label="${best == null ? "Ainda não feito" : `${best} de ${total} certas`}">${segs}</span>
+        <span class="lc-meta">${best == null ? `0/${total}` : `<span class="schip ${band}">${best}/${total}</span>`}</span></span></button>`;
   }
 
   textPage(t) {

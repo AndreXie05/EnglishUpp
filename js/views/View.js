@@ -102,9 +102,9 @@ class View {
     const p = this.progress;
     return `<div class="stats">
       <div class="stat streakstat ${p.data.days.includes(DateUtils.today()) ? "lit" : ""}"><b><span class="flame" aria-hidden="true">🔥</span> ${p.streak()}</b><span>dias seguidos</span></div>
-      <div class="stat"><b>${p.spun ? `${Math.min(p.todayCount, p.goal)}/${p.goal}` : p.todayCount}</b><span>exercícios hoje</span></div>
-      <div class="stat"><b>${p.wordCount}</b><span>palavras estudadas</span></div>
-      <div class="stat"><b>${p.masteredCount}</b><span>palavras dominadas</span></div>
+      <div class="stat st2"><b><span aria-hidden="true">✏️</span> ${p.spun ? `${Math.min(p.todayCount, p.goal)}/${p.goal}` : p.todayCount}</b><span>exercícios hoje</span></div>
+      <div class="stat st3"><b><span aria-hidden="true">📚</span> ${p.wordCount}</b><span>palavras estudadas</span></div>
+      <div class="stat st4"><b><span aria-hidden="true">⭐</span> ${p.masteredCount}</b><span>palavras dominadas</span></div>
     </div>`;
   }
 }

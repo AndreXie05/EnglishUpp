@@ -10,8 +10,9 @@ class ProgressView extends View {
   get tab() { return "progresso"; }
 
   render() {
-    return `<div><div class="eyebrow">O teu caminho</div><h1>Progresso</h1></div>
+    return `${this.heroPanel()}
       ${this.stats()}
+      ${this.levelBars()}
       ${this.badgesPanel()}
       ${this.examsPanel()}
       ${this.writingStats()}
@@ -34,9 +35,33 @@ class ProgressView extends View {
     ["C2", "Domínio pleno (Proficiency)", "Utilizador proficiente. Compreende praticamente tudo o que ouve ou lê e resume informação de várias fontes orais e escritas com precisão e espontaneidade. Equivale a IELTS 8.5–9.0 / CPE.", "vocabulário muito vasto"],
   ];
 
+  // Cabeçalho: nível com um anel de XP, e o total de lições, palavras e exames
+  heroPanel() {
+    const p = this.progress, lv = p.level, from = Progress.xpFor(lv), to = Progress.xpFor(lv + 1);
+    const pct = Math.round((p.xp - from) / (to - from) * 100);
+    const lessons = this.dict.themes.filter(t => p.lessonComplete(t.id)).length;
+    const exams = ProgressView.LEVELS.filter(([c]) => p.examPassed(c)).length;
+    return `<section class="panel phero"><div class="pring" style="--p:${pct}"><b>${lv}</b><span>nível</span></div>
+      <div class="phtext"><div class="eyebrow">O teu caminho</div><h1>Progresso</h1>
+        <p style="margin:0"><b>${this.esc(Rank.title(lv))}</b> · ${p.xp} XP · faltam ${to - p.xp} para o nível ${lv + 1}</p>
+        <div class="phchips"><span>📘 ${lessons}/${this.dict.themes.length} lições</span><span>🏆 ${exams} exame${exams === 1 ? "" : "s"}</span><span>🔥 ${p.streak()} dias</span></div></div></section>`;
+  }
+
+  // Uma barra por nível com as lições acabadas, na cor do nível
+  levelBars() {
+    const rows = ProgressView.LEVELS.map(([code, name]) => {
+      const themes = this.dict.themes.filter(t => t.level === code);
+      if (!themes.length) return "";
+      const done = themes.filter(t => this.progress.lessonComplete(t.id)).length, pct = Math.round(done / themes.length * 100);
+      return `<button class="plevel" style="--lc:${ThemesView.LEVEL_COLORS[code]}" data-action="level" data-v="${code}">
+        <b>${code}</b><span class="plname">${this.esc(name.replace(/ \(.*\)$/, ""))}</span><span class="plbar"><i style="width:${pct}%"></i></span><span class="plnum">${done}/${themes.length}</span></button>`;
+    }).join("");
+    return `<section class="panel"><h2>📊 Lições por nível</h2><div class="plevels">${rows}</div></section>`;
+  }
+
   badgesPanel() {
     const got = Achievements.LIST.filter(([id]) => this.progress.data.badges[id]).length;
-    return `<section class="panel"><h2>Conquistas · ${got} de ${Achievements.LIST.length}</h2>
+    return `<section class="panel"><h2>🏅 Conquistas · ${got} de ${Achievements.LIST.length}</h2>
       <div class="badges">${Achievements.LIST.map(([id, title, desc]) => {
         const date = this.progress.data.badges[id];
         const [icon, tier] = Achievements.art(id);
@@ -52,9 +77,11 @@ class ProgressView extends View {
       const status = best == null ? "" : ` · melhor ${best}%${this.progress.examPassed(level) ? " ✓" : ""}`;
       const action = ex.ready ? `<button class="btn small" data-action="exam" data-v="${level}">${best == null ? "Fazer o exame" : "Repetir"}</button>`
         : `<span class="muted">Faz pelo menos ${Math.ceil(ex.themes.length * LevelExam.READY)} lições (tens ${ex.lessonsDone})</span>`;
-      return `<div class="row" style="justify-content:space-between"><span><b>Exame ${level}</b>${status}</span>${action}</div>`;
+      const passed = this.progress.examPassed(level);
+      return `<div class="pexam ${passed ? "passed" : ""}" style="--lc:${ThemesView.LEVEL_COLORS[level]}"><span class="pexicon" aria-hidden="true">${passed ? "🏆" : ex.ready ? "⚔️" : "🔒"}</span>
+        <span class="pextext"><b>Exame ${level}</b><span class="muted">${best == null ? (ex.ready ? "Pronto para fazer" : "Ainda fechado") : `Melhor ${best}%${passed ? " · passaste" : ""}`}</span></span>${action}</div>`;
     }).join("");
-    return `<section class="panel"><h2>Exames finais</h2>
+    return `<section class="panel"><h2>🎓 Exames finais</h2>
       <p class="muted" style="margin:0;font-size:.9rem">Cerca de 60 perguntas por nível: pronúncia, significado, escrever palavras, frases com espaço, gramática e perguntas sobre textos. Passas com ${LevelExam.PASS}%.</p>${rows}</section>`;
   }
 
@@ -62,7 +89,7 @@ class ProgressView extends View {
     this.progress.purgeRounds();
     const rounds = this.progress.weekRounds();
     const best = rounds.length ? Math.max(...rounds.map(r => r.points)) : 0;
-    return `<section class="panel"><h2>Treinos de tradução (últimos 7 dias)</h2><div class="stats">
+    return `<section class="panel"><h2>✍️ Treinos de tradução (últimos 7 dias)</h2><div class="stats">
       <div class="stat"><b>${rounds.length}</b><span>treinos esta semana</span></div>
       <div class="stat"><b>${this.progress.weekPoints()}</b><span>pontos esta semana</span></div>
       <div class="stat"><b>${best}</b><span>melhor treino</span></div>
@@ -75,7 +102,7 @@ class ProgressView extends View {
     const current = studied.length ? Math.max(...studied) : 0;
     const levels = [...new Set(this.dict.themes.map(t => t.level))];
     const byLevel = levels.map(l => `${l}: ${this.dict.themes.filter(t => t.level === l).length}`).join(" · ");
-    return `<section class="panel"><h2>Caminho até ao C1/C2</h2>
+    return `<section class="panel"><h2>🧭 Caminho até ao C1/C2</h2>
       <p class="muted" style="margin:0;font-size:.9rem">A app tem ${this.dict.themes.length} lições (${byLevel}) e ${this.dict.allWords.length} palavras. Os níveis A1 e A2 seguem a lista oficial da Cambridge; os níveis mais altos são um ponto de partida e não chegam sozinhos para o C1 ou C2: precisas também de muita leitura, de ouvir inglês e de escrever e falar com pessoas. As estimativas de vocabulário variam entre autores.</p>
       <ol class="levels">${ProgressView.LEVELS.map(([code, name, desc, vocab], i) =>
         `<li class="${i === current ? "now" : ""}"><b>${code}</b><div><button class="linkbtn" data-action="level" data-v="${code}">${name}</button>${i === current ? ` <span class="pill now">Estás aqui</span>` : ""}<br><span class="muted">${desc} (${vocab})</span></div></li>`).join("")}</ol>
@@ -85,31 +112,31 @@ class ProgressView extends View {
   boxesChart() {
     const boxes = this.progress.boxCounts();
     const max = Math.max(1, ...boxes);
-    return `<section class="panel"><h2>Quando voltam as palavras</h2>
+    return `<section class="panel"><h2>🔁 Quando voltam as palavras</h2>
       <p class="muted" style="margin:0;font-size:.9rem">Cada acerto empurra a palavra para mais longe. As da direita já estão bem fixadas.</p>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end;height:140px">
-        ${boxes.map((n, i) => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end">
-          <span style="font-weight:700;font-variant-numeric:tabular-nums">${n}</span>
-          <div style="width:100%;background:${i >= Progress.MASTERED_BOX ? "var(--good)" : "var(--accent)"};border-radius:6px 6px 0 0;height:${Math.max(2, n / max * 90)}px"></div>
-          <span class="muted" style="font-size:.72rem;text-align:center">${ProgressView.BOX_LABELS[i]}</span></div>`).join("")}
-      </div></section>`;
+      <div class="pboxes">${boxes.map((n, i) => `<div class="pbox ${i >= Progress.MASTERED_BOX ? "fixed" : ""}" style="--i:${i}">
+          <span class="pbn">${n}</span><div class="pbcol" style="height:${Math.max(4, n / max * 100)}%"></div>
+          <span class="pbl">${ProgressView.BOX_LABELS[i]}</span></div>`).join("")}</div></section>`;
   }
 
   testsTable() {
     const tests = this.progress.recentTests(10);
     const body = tests.length
-      ? `<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Resultado</th></tr></thead><tbody>
-        ${tests.map(x => `<tr><td>${this.esc(x.date)}</td><td>${x.practice ? "Treino" : "Teste"}</td><td>${x.score}/${x.total} (${Math.round(x.score / x.total * 100)}%)</td></tr>`).join("")}</tbody></table></div>`
+      ? `<div class="ptests">${tests.map(x => {
+          const pct = Math.round(x.score / x.total * 100);
+          return `<div class="ptest"><span class="ptdate">${this.esc(DateUtils.format(x.date))}</span><span class="pill">${x.practice ? "Treino" : "Teste"}</span>
+            <span class="ptbar"><i class="${Progress.band(pct)}" style="width:${pct}%"></i></span><span class="schip ${Progress.band(pct)}">${x.score}/${x.total}</span></div>`;
+        }).join("")}</div>`
       : `<p class="muted" style="margin:0">Ainda não fizeste nenhum teste.</p>`;
-    return `<section class="panel"><h2>Últimos testes</h2>${body}</section>`;
+    return `<section class="panel"><h2>📝 Últimos testes</h2>${body}</section>`;
   }
 
   hardWords() {
     const hard = this.progress.hardestWords(this.dict, 10);
     const body = hard.length
-      ? `<div class="entries">${hard.map(({ word, wrong }) => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><strong>${this.esc(word.en)}</strong><span class="muted">${this.esc(word.pt)}</span><span class="pill" style="margin-left:auto">${wrong} erro${wrong > 1 ? "s" : ""}</span></div>`).join("")}</div>`
+      ? `<div class="phard">${hard.map(({ word, wrong }) => `<div class="phw"><b>${this.esc(word.en)}</b><span class="muted">${this.esc(word.pt)}</span><span class="phx">${wrong}✗</span></div>`).join("")}</div>`
       : `<p class="muted" style="margin:0">Ainda sem erros registados.</p>`;
-    return `<section class="panel"><h2>Palavras difíceis</h2>${body}${hard.length ? `<div class="row"><button class="btn ghost small" data-action="hardwords">Ver todas e treinar</button></div>` : ""}</section>`;
+    return `<section class="panel"><h2>🎯 Palavras difíceis</h2>${body}${hard.length ? `<div class="row"><button class="btn ghost small" data-action="hardwords">Ver todas e treinar</button></div>` : ""}</section>`;
   }
 
   /* ----- cópia de segurança: exportar e importar o progresso ----- */

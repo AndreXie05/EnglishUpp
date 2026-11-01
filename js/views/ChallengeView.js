@@ -19,17 +19,14 @@ class ChallengeView extends View {
   get rule() { return "o máximo de palavras dos temas escolhidos"; }
   get heading() { return `${ChallengeView.SECONDS} segundos`; }
 
+  // Sem ecrã de apresentação: o desafio começa logo. Este ecrã só aparece se não houver palavras suficientes
   introScreen() {
-    const keys = this.keys();
-    const best = this.progress.data[this.bestKey] || 0;
-    const body = keys.length < ChallengeView.MIN_WORDS
-      ? `<p style="margin:0">Escolhe temas com pelo menos ${ChallengeView.MIN_WORDS} palavras para jogares o desafio.</p>`
-      : `<p style="margin:0">Tens ${ChallengeView.SECONDS} segundos para acertar ${this.rule}. Cada certa vale 1 XP. Errar não tira nada, mas passa à frente.</p>
-         <p class="muted" style="margin:0">Recorde: ${best} certas</p>
-         <div class="row"><button class="btn" data-action="cstart">Começar</button></div>`;
-    return `<div><div class="eyebrow">Desafio</div><h1>${this.heading}</h1></div>
-      <section class="panel">${body}</section>
-      <div class="row"><button class="linkbtn" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div>`;
+    return GameView.needWords(this.heading);
+  }
+
+  // Começa logo se houver palavras suficientes (senão fica no aviso)
+  begin() {
+    if (this.keys().length >= ChallengeView.MIN_WORDS) this.start();
   }
 
   keys() {

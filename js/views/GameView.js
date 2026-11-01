@@ -1,4 +1,4 @@
-// Jogo: nível e XP, desafio de 60 segundos, jogos e mapa de aventura
+// Jogo: desafio de 60 segundos, jogos e mapa de aventura (o nível e o XP estão no Hoje e no topo)
 class GameView extends View {
   constructor(app, level = null) {
     super(app);
@@ -12,11 +12,8 @@ class GameView extends View {
   }
 
   render() {
-    return `<div><div class="eyebrow">Jogo</div><h1>Nível ${this.progress.level}</h1></div>
-      ${GameView.playerCard(this.progress)}
-      <section class="panel"><div class="eyebrow">Desafio</div><h2>60 segundos</h2>
-        <p class="muted" style="margin:0">Acerta o máximo de palavras antes de o tempo acabar. Recorde: ${this.progress.data.challengeBest || 0}.</p>
-        <div class="row"><button class="btn" data-action="challenge">Jogar</button></div></section>
+    return `<div><div class="eyebrow">Aprende a jogar</div><h1>Jogo</h1></div>
+      <section class="panel gsuggest" id="gsuggest">${this.suggestHtml()}</section>
       ${this.gamesPanel()}
       ${this.mapPanel()}
       ${this.reminderPanel()}`;
@@ -26,7 +23,7 @@ class GameView extends View {
   static themes(app) {
     const scope = app.progress.data.gameScope || "all", all = app.dict.themes;
     if (scope === "all") return all;
-    if (scope === "studied") return all.filter(t => app.progress.lesson(t.id));
+    if (scope === "studied") return all.filter(t => app.progress.studiedTheme(t.id));
     return all.filter(t => t.level === scope);
   }
 
@@ -108,36 +105,102 @@ class GameView extends View {
 
   gamesPanel() {
     return `<section class="panel"><div class="eyebrow">Jogos</div>
-      <p class="muted" style="margin:0">Jogam com as palavras de ${this.scopeLabel()}. Cada jogo dá XP e conta para as missões.</p>
-      <div class="tabs" role="group" aria-label="Temas dos jogos">${[["all", "Todos os temas"], ["studied", "Só estudados"], ...ProgressView.LEVELS.map(([c]) => [c, c])].map(([v, l]) =>
+      <p class="muted" style="margin:0">Jogam com as palavras de ${this.scopeLabel()}. Cada jogo dá XP e conta para a meta diária.</p>
+      <div class="tabs lvtabs" role="group" aria-label="Temas dos jogos">${[["all", "Todos os temas"], ["studied", "Só estudados"], ...ProgressView.LEVELS.map(([c]) => [c, c])].map(([v, l]) =>
         `<button data-action="gscope" data-v="${v}" aria-pressed="${(this.progress.data.gameScope || "all") === v}">${l}</button>`).join("")}</div>
       <div class="gamegrid">
-        ${[
-          ["game", "story", "🗺️", "Modo história", "A viagem do Leo, capítulo a capítulo", 6],
-          ["nav", "escape", "🔐", "Escape room", "Abre 10 cadeados antes do tempo acabar", 2],
-          ["game", "hangman", "🪢", "Forca", "Adivinha a palavra letra a letra", 1],
-          ["game", "scramble", "🧩", "Frases", "Põe as palavras na ordem certa", 3],
-          ["adventures", "", "🎭", "Conversas e histórias", "Escolhe o que dizer e muda o final", 6],
-          ["game", "mystery", "🔤", "Palavra misteriosa", "Adivinha a palavra em 6 tentativas", 2],
-          ["game", "rain", "🌧️", "Chuva de palavras", "Toca na tradução antes de cair", 1],
-          ["game", "anagram", "🔀", "Anagramas", "Ordena as letras contra o relógio", 4],
-          ["game", "bingo", "🎱", "Bingo de palavras", "Faz uma linha com as traduções", 8],
-          ["game", "cross", "📰", "Palavras cruzadas", "Pistas em inglês: lê e escreve", 3],
-          ["game", "emoji", "🖼️", "Adivinha a imagem", "Vê o emoji e acerta a palavra", 4],
-          ["game", "duel", "⚔️", "Duelo", "Corrida de perguntas contra um adversário", 8],
-          ["game", "odd", "🧐", "Intruso", "Qual palavra não pertence ao grupo?", 1],
-          ["game", "bomb", "💣", "Bomba-relógio", "Responde antes de ela explodir", 5],
-          ["game", "tower", "🏗️", "Torre", "Sobe o mais alto que conseguires", 7],
-          ["game", "chain", "🔗", "Cadeia de palavras", "A palavra seguinte começa na última letra", 6],
-          ["game", "fix", "🛠️", "Corrige o erro", "Toca na palavra errada da frase", 8],
-          ["game", "dictation", "✍️", "Ditado", "Lê a frase e escreve-a de memória", 2],
-          ["game", "quizshow", "💶", "Quem quer ser milionário", "15 perguntas, 3 ajudas", 7],
-          ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
-          ["vchallenge", "", "⏱️", "Verbos em 60 s", "Irregulares em todos os tempos", 5],
-          ["hardwords", "", "🎯", "Palavras difíceis", "As que mais erras, com dicas", 6],
-        ].map(([act, v, icon, name, desc, c]) => `<button class="gcard g${c}" data-action="${act}"${v ? ` data-v="${v}"` : ""}>
-          <span class="gicon" aria-hidden="true">${icon}</span><span class="gname">${name}</span><span class="gdesc">${desc}</span></button>`).join("")}
+        ${GameView.GAMES.map(g => {
+          const [act, v, icon, name, desc, c] = g, rec = this.record(v || act);
+          // O jogo que está na sugestão lá em cima fica no mesmo sítio, mas esbatido
+          return `<button class="gtile ${g === GameView.suggested() ? "insuggest" : ""}" style="--gc:${GameView.COLORS[c]}" data-game="${act}:${v}" data-action="${act}"${v ? ` data-v="${v}"` : ""}>
+            <span class="gt-top"><span class="gt-icon" aria-hidden="true">${icon}</span>${rec ? `<span class="gt-rec">${rec}</span>` : ""}</span>
+            <span class="gt-body"><span class="gt-name">${name}</span><span class="gt-desc">${desc}</span></span>
+            <span class="gt-play">Jogar ▶</span></button>`;
+        }).join("")}
       </div></section>`;
+  }
+
+  // Jogo sugerido: muda a cada 30 segundos (igual para toda a gente no mesmo intervalo), por uma ordem baralhada do dia
+  static SUGGEST_MS = 30000;
+
+  static suggested() {
+    const slot = Math.floor(Date.now() / GameView.SUGGEST_MS), n = GameView.GAMES.length;
+    const order = DailyFun.shuffle(GameView.GAMES.map((_, i) => i), DailyFun.rng(DateUtils.dayNumber()));
+    return GameView.GAMES[order[slot % n]];
+  }
+
+  suggestHtml() {
+    const [act, v, icon, name, desc, c] = GameView.suggested(), rec = this.record(v || act);
+    const left = GameView.SUGGEST_MS - Date.now() % GameView.SUGGEST_MS;
+    return `<div class="gsg" style="--gc:${GameView.COLORS[c]}">
+      <span class="gsgicon" aria-hidden="true">${icon}</span>
+      <div class="gsgtext"><div class="eyebrow">🎲 Jogo sugerido</div><h2>${name}</h2><p style="margin:0">${desc}</p>
+        <div class="gsgrow"><button class="btn gsggo" data-action="${act}"${v ? ` data-v="${v}"` : ""}>▶ Jogar</button>${rec ? `<span class="gsgrec">${rec}</span>` : ""}</div></div>
+      <span class="gsgbar" aria-hidden="true"><i style="animation-duration:${left}ms"></i></span></div>`;
+  }
+
+  // Troca o jogo sugerido quando o intervalo de 30 segundos muda, sem refazer o ecrã
+  afterRender() {
+    clearInterval(this.suggestTimer);
+    let slot = Math.floor(Date.now() / GameView.SUGGEST_MS);
+    this.suggestTimer = setInterval(() => {
+      const box = document.getElementById("gsuggest");
+      if (!box || this.app.view !== this) return clearInterval(this.suggestTimer); // o utilizador mudou de ecrã
+      const now = Math.floor(Date.now() / GameView.SUGGEST_MS);
+      if (now === slot) return;
+      slot = now;
+      box.innerHTML = this.suggestHtml();
+      const [act, v] = GameView.suggested();
+      document.querySelectorAll(".gtile[data-game]").forEach(t => t.classList.toggle("insuggest", t.dataset.game === `${act}:${v}`));
+      box.classList.remove("fresh");
+      void box.offsetWidth; // recomeça a animação
+      box.classList.add("fresh");
+    }, 1000);
+  }
+
+  // Todos os jogos: [ação, valor, ícone, nome, descrição, cor]
+  static GAMES = [
+    ["challenge", "", "⏱️", "Desafio de 60 s", "Acerta o máximo de palavras contra o relógio", 4],
+    ["game", "story", "🗺️", "Modo história", "A viagem do Leo, capítulo a capítulo", 6],
+    ["nav", "escape", "🔐", "Escape room", "Abre 10 cadeados antes do tempo acabar", 2],
+    ["game", "hangman", "🪢", "Forca", "Adivinha a palavra letra a letra", 1],
+    ["game", "scramble", "🧩", "Frases", "Põe as palavras na ordem certa", 3],
+    ["adventures", "", "🎭", "Conversas e histórias", "Escolhe o que dizer e muda o final", 6],
+    ["game", "mystery", "🔤", "Palavra misteriosa", "Adivinha a palavra em 6 tentativas", 2],
+    ["game", "rain", "🌧️", "Chuva de palavras", "Toca na tradução antes de cair", 1],
+    ["game", "anagram", "🔀", "Anagramas", "Ordena as letras contra o relógio", 4],
+    ["game", "bingo", "🎱", "Bingo de palavras", "Faz uma linha com as traduções", 8],
+    ["game", "cross", "📰", "Palavras cruzadas", "Pistas em inglês: lê e escreve", 3],
+    ["game", "emoji", "🖼️", "Adivinha a imagem", "Vê o emoji e acerta a palavra", 4],
+    ["game", "duel", "⚔️", "Duelo", "Corrida de perguntas contra um adversário", 8],
+    ["game", "odd", "🧐", "Intruso", "Qual palavra não pertence ao grupo?", 1],
+    ["game", "bomb", "💣", "Bomba-relógio", "Responde antes de ela explodir", 5],
+    ["game", "tower", "🏗️", "Torre", "Sobe o mais alto que conseguires", 7],
+    ["game", "chain", "🔗", "Cadeia de palavras", "A palavra seguinte começa na última letra", 6],
+    ["game", "fix", "🛠️", "Corrige o erro", "Toca na palavra errada da frase", 8],
+    ["game", "dictation", "✍️", "Ditado", "Lê a frase e escreve-a de memória", 2],
+    ["game", "quizshow", "💶", "Quem quer ser milionário", "15 perguntas, 3 ajudas", 7],
+    ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
+    ["vchallenge", "", "⏱️", "Verbos em 60 s", "Irregulares em todos os tempos", 5],
+    ["hardwords", "", "🎯", "Palavras difíceis", "As que mais erras, com dicas", 6],
+  ];
+
+  static COLORS = { 1: "#E5484D", 2: "#8E4EC6", 3: "#12A594", 4: "#F5A524", 5: "#2F6FED", 6: "#D6409F", 7: "#30A46C", 8: "#5B5BD6" };
+
+  // Recorde ou progresso de um jogo, para mostrar no cartão (null se ainda não jogaste)
+  record(game) {
+    const d = this.progress.data;
+    if (game === "story") {
+      const total = STORY.reduce((n, c) => n + c.chapters.length, 0), read = Object.keys(d.story || {}).length;
+      return read ? `📖 ${read}/${total}` : null;
+    }
+    if (game === "escape") {
+      const n = Object.keys(d.escape || {}).length;
+      return n ? `🔓 ${n} sala${n > 1 ? "s" : ""}` : null;
+    }
+    if (game === "quizshow") return d.quizShowBest ? `🏆 ${d.quizShowBest.toLocaleString("pt-PT")} €` : null;
+    const key = { challenge: "challengeBest", bomb: "bombBest", tower: "towerBest", rain: "rainBest", anagram: "anagramBest", vchallenge: "verbBest" }[game];
+    return key && d[key] ? `🏆 ${d[key]}` : null;
   }
 
   reminderPanel() {
@@ -154,38 +217,52 @@ class GameView extends View {
       <span class="muted" style="font-size:.85rem">Só avisa com a app aberta (num separador ou instalada no ecrã inicial). Não funciona com o browser fechado.</span></section>`;
   }
 
-  // Nível, título e barra de XP (também usada no início)
-  static playerCard(p) {
-    const lv = p.level, from = Progress.xpFor(lv), to = Progress.xpFor(lv + 1);
-    const pct = Math.round((p.xp - from) / (to - from) * 100);
-    return `<section class="panel"><div class="row" style="justify-content:space-between"><h2>${Rank.title(lv)}</h2><span class="pill now">Nível ${lv}</span></div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <span class="muted" style="font-size:.9rem">${p.xp} XP · faltam ${to - p.xp} para o nível ${lv + 1}</span></section>`;
-  }
-
   // Caminho com uma etapa por lição e o exame final como chefe
+  // Mapa de aventura: um trilho aos ziguezagues com uma etapa por lição e o exame final como chefe
+  static MAP_ROW = 84;
+  static MAP_X = [6, 26, 44, 56, 44, 26];
+
   mapPanel() {
     const level = this.currentLevel;
     const themes = this.dict.themes.filter(t => t.level === level);
     const next = this.progress.nextTheme(this.dict);
+    const color = ThemesView.LEVEL_COLORS[level] || "var(--accent)";
     const tabs = ProgressView.LEVELS.map(([code]) =>
       `<button data-action="glevel" data-v="${code}" aria-pressed="${code === level}">${code}</button>`).join("");
-    const offs = [0, 14, 28, 14];
+    if (!themes.length) return `<section class="panel"><div class="eyebrow">Aventura</div><div class="tabs lvtabs" role="group" aria-label="Nível">${tabs}</div>
+      <p class="muted" style="margin:0">Ainda não há lições neste nível.</p></section>`;
+    const H = GameView.MAP_ROW, X = i => GameView.MAP_X[i % GameView.MAP_X.length];
+    // Etapas do lado direito põem o nome à esquerda do círculo, para não saírem do mapa
+    const place = (i, top) => X(i) >= 44 ? `top:${top}px;right:calc(${100 - X(i)}% - 56px)` : `top:${top}px;left:${X(i)}%`;
+    let done = 0, stars = 0;
     const nodes = themes.map((t, i) => {
       const studied = this.progress.lessonComplete(t.id);
       const full = studied && this.progress.masteredInTheme(t) === t.size;
-      const cls = full ? "gold" : studied ? "done" : t === next || this.progress.partsDone(t.id) ? "now" : "";
-      return `<button class="mrow" style="padding-left:${offs[i % 4]}%" data-action="open" data-v="${t.id}">
-        <span class="node ${cls}">${full ? "★" : studied ? "✓" : t.number}</span><span>${this.esc(t.pt)}</span></button>`;
+      const here = !studied && (t === next || this.progress.partsDone(t.id) > 0);
+      done += studied ? 1 : 0;
+      stars += full ? 1 : 0;
+      const cls = full ? "gold" : studied ? "done" : here ? "now" : "todo";
+      const status = full ? "★ Dominada" : studied ? "✓ Concluída" : here ? "📍 Estás aqui" : `Lição ${t.number}`;
+      return `<button class="mstop ${cls} ${X(i) >= 44 ? "flip" : ""}" style="${place(i, i * H)}" data-action="open" data-v="${t.id}">
+        <span class="mnode"><span aria-hidden="true">${ThemesView.icon(t)}</span><b>${full ? "★" : studied ? "✓" : t.number}</b></span>
+        <span class="mlabel"><span class="mtitle">${this.esc(t.pt)}</span><span class="msub">${status}</span></span></button>`;
     }).join("");
+    // Exame final (chefe) no fim do trilho
     const exam = new LevelExam(level, this.app.examContext());
-    const passed = this.progress.examPassed(level);
-    const boss = `<button class="mrow" data-action="gexam" data-v="${level}" ${exam.ready ? "" : "disabled"}>
-      <span class="node boss ${passed ? "gold" : ""}">${passed ? "★" : "⚔"}</span>
-      <span><strong>Chefe: exame ${level}</strong><br><span class="muted" style="font-size:.85rem">${passed ? `Vencido · melhor ${this.progress.data.exams[level]}%` : exam.ready ? "Pronto para o desafio" : "Estuda mais lições deste nível"}</span></span></button>`;
-    return `<section class="panel"><div class="eyebrow">Aventura</div>
-      <div class="tabs" role="group" aria-label="Nível">${tabs}</div>
-      ${themes.length ? `<div class="map">${nodes}${boss}</div>` : `<p class="muted" style="margin:0">Ainda não há lições neste nível.</p>`}</section>`;
+    const passed = this.progress.examPassed(level), n = themes.length;
+    const boss = `<button class="mstop boss ${passed ? "gold" : ""} ${X(n) >= 44 ? "flip" : ""}" style="${place(n, n * H)}" data-action="gexam" data-v="${level}" ${exam.ready ? "" : "disabled"}>
+      <span class="mnode"><span aria-hidden="true">${passed ? "🏆" : "🐉"}</span></span>
+      <span class="mlabel"><span class="mtitle">Chefe: exame ${level}</span><span class="msub">${passed ? `Vencido · melhor ${this.progress.data.exams[level]}%` : exam.ready ? "⚔️ Pronto para o desafio" : "🔒 Estuda mais lições deste nível"}</span></span></button>`;
+    // Caminho que liga as etapas (coordenadas: x em % da largura, y em px)
+    const pts = Array.from({ length: n + 1 }, (_, i) => `${X(i)},${i * H + 28}`).join(" ");
+    const height = (n + 1) * H;
+    return `<section class="panel amap" style="--lc:${color}">
+      <div class="row" style="justify-content:space-between"><div><div class="eyebrow">🗺️ Aventura</div><h2 style="margin:0">Nível ${level}</h2></div>
+        <div class="amstats"><span>✓ ${done}/${n}</span><span>★ ${stars}</span><span>${passed ? "🏆" : "🐉"}</span></div></div>
+      <div class="tabs lvtabs" role="group" aria-label="Nível">${tabs}</div>
+      <div class="mtrail" style="height:${height}px">
+        <svg class="mpath" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" vector-effect="non-scaling-stroke"/></svg>
+        ${nodes}${boss}</div></section>`;
   }
 
   onAction(action, value) {
@@ -195,9 +272,13 @@ class GameView extends View {
         this.app.save();
         this.app.render();
         return true;
-      case "challenge":
-        this.app.show(new ChallengeView(this.app));
+      case "challenge": {
+        // O desafio começa logo, sem ecrã de apresentação
+        const view = new ChallengeView(this.app);
+        this.app.show(view);
+        view.begin();
         return true;
+      }
       case "game": {
         const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView, story: StoryView };
         this.app.show(new views[value](this.app));

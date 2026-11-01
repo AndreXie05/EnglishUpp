@@ -44,20 +44,27 @@ class PrepositionView extends View {
   get finished() { return this.index >= this.rounds.length; }
 
   // A cena em emojis, posicionada para cada preposição
+  // A cena: céu, chão e os dois objetos colocados conforme a preposição. O chão está a 150px do topo;
+  // os objetos pousados têm sombra, e o objeto da frase brilha para se perceber qual é
+  static GROUND = 150;
+
   scene(r) {
-    const [obj, , ref] = r.pair, kind = r.prep[2];
-    const at = (e, size, left, top, z = 1, op = 1) => `<span class="pe${e === obj ? " obj" : ""}" style="font-size:${size}rem;left:${left}%;top:${top}px;z-index:${z};opacity:${op}">${e}</span>`;
+    const [obj, , ref] = r.pair, kind = r.prep[2], G = PrepositionView.GROUND, px = rem => rem * 16;
+    // e: emoji · size: rem · left: % · top: px · z: camada
+    const at = (e, size, left, top, z = 1) => `<span class="pe${e === obj ? " obj" : ""}" style="font-size:${size}rem;left:${left}%;top:${top}px;z-index:${z}">${e}</span>`;
+    const ground = (size, sink = 6) => G - px(size) + sink; // topo de um objeto pousado no chão
+    const shadow = (left, w) => `<span class="pshadow" style="left:${left}%;width:${w}px"></span>`;
     const parts = {
-      on: at(ref, 4, 50, 70) + at(obj, 2.4, 50, 24, 2),
-      above: at(ref, 4, 50, 100) + at(obj, 2.4, 50, 0, 2),
-      under: at(ref, 4, 50, 40) + at(obj, 2.4, 50, 130, 2),
-      in: at(ref, 4.6, 50, 56, 1, .38) + at(obj, 2, 50, 76, 2),
-      behind: at(obj, 2.6, 42, 84, 1) + at(ref, 4, 50, 70, 2),
-      front: at(ref, 4, 46, 60, 1) + at(obj, 2.6, 56, 98, 2),
-      next: at(ref, 4, 36, 70) + at(obj, 2.4, 66, 82),
-      between: at(ref, 3.4, 22, 74) + at(ref, 3.4, 78, 74) + at(obj, 2.4, 50, 86),
+      on: shadow(50, 70) + at(ref, 4.2, 50, ground(4.2)) + at(obj, 2.4, 50, ground(4.2) - px(2.4) + 10, 2),
+      above: shadow(50, 70) + at(ref, 4.2, 50, ground(4.2)) + `<span class="pgap" style="left:50%;top:52px;height:${ground(4.2) - 52}px"></span>` + at(obj, 2.4, 50, 12, 2),
+      under: shadow(50, 90) + at(ref, 5, 50, ground(5) - 18, 2) + at(obj, 1.9, 50, ground(1.9), 1),
+      in: shadow(50, 80) + at(obj, 2.2, 50, ground(4.6) - 22, 1) + at(ref, 4.6, 50, ground(4.6), 2),
+      behind: shadow(52, 70) + at(obj, 2.2, 40, ground(2.2) - 26, 1) + at(ref, 4.2, 52, ground(4.2), 2),
+      front: shadow(50, 60) + at(ref, 3.4, 50, ground(3.4) - 14, 1) + shadow(54, 44) + at(obj, 2.8, 54, ground(2.8) + 12, 2),
+      next: shadow(34, 70) + at(ref, 4.2, 34, ground(4.2)) + shadow(68, 40) + at(obj, 2.4, 68, ground(2.4), 2),
+      between: shadow(20, 56) + at(ref, 3.6, 20, ground(3.6)) + shadow(80, 56) + at(ref, 3.6, 80, ground(3.6)) + shadow(50, 40) + at(obj, 2.4, 50, ground(2.4), 2),
     };
-    return `<div class="pscene" role="img" aria-label="Cena: o objeto está ${this.esc(r.prep[1])} o outro">${parts[kind]}</div>`;
+    return `<div class="pscene" role="img" aria-label="Cena: o objeto está ${this.esc(r.prep[1])} o outro"><span class="psun" aria-hidden="true"></span><span class="pcloud" aria-hidden="true"></span>${parts[kind]}</div>`;
   }
 
   options(r) {
@@ -92,8 +99,7 @@ class PrepositionView extends View {
         <div class="ex">${this.esc(en).replace(this.esc(prep[0]), `<b>${this.esc(prep[0])}</b>`)}<br><i class="muted">${this.esc(pt)}</i></div></article>`;
     }).join("");
     const lessons = ["g-prepplace", "g-adjprep"].map(id => this.app.grammar.find(l => l.id === id)).filter(Boolean);
-    return `<div><div class="eyebrow">Gramática</div><h1>Preposições</h1></div>
-      ${GrammarView.sections(this, "preps")}
+    return `${GrammarView.header(this, "preps", "Gramática", "Preposições", "As preposições de lugar dizem onde uma coisa está em relação a outra.")}
       <section class="panel lead hero"><span class="heroicon" aria-hidden="true">📍</span>
         <div class="eyebrow">Onde está?</div><h2>As preposições de lugar dizem onde uma coisa está em relação a outra.</h2>
         <p style="margin:0">Vê as ${PrepositionView.PREPS.length} mais usadas e depois testa-te no jogo.</p>

@@ -89,6 +89,11 @@ class Progress {
   static LESSON_PARTS = ["fill", "fill-write", "match-pt", "match-ipa", "en-pt+pt-en", "ipa", "write", "all", "story"];
 
   // Quantas das 9 partes já fizeste (a lição só está "estudada" com 9/9)
+  // Tema estudado: já tem pelo menos uma parte da lição feita (ou a lição foi dada como concluída)
+  studiedTheme(themeId) {
+    return !!this.lesson(themeId) || this.partsDone(themeId) > 0;
+  }
+
   partsDone(themeId) {
     return Progress.LESSON_PARTS.filter(p => this.data.best[`${themeId}:${p}`] != null).length;
   }
@@ -251,10 +256,12 @@ class Progress {
     });
   }
 
-  // No treino de erros, acertar à primeira tira a palavra da lista (não mexe no calendário do teste diário)
+  // No treino de erros, a palavra só sai da lista ao fim de ERROR_CLEAR acertos seguidos (rok conta-os; errar volta a zero)
   resolveWord(key) {
     const w = this.data.words[key];
-    if (w) w.rv = true;
+    if (!w) return;
+    w.rok = (w.rok || 0) + 1;
+    if (w.rok >= Progress.ERROR_CLEAR) w.rv = true;
   }
 
   // Acertar nos exercícios da lição não muda o calendário do teste diário, mas ao fim de 3 acertos
@@ -277,13 +284,14 @@ class Progress {
       w.pc = 0;
       w.wrong = (w.wrong || 0) + 1;
       w.rv = false; // voltou a falhar: volta à lista de erros
+      w.rok = 0;
     }
     w.due = DateUtils.addDays(DateUtils.today(), Progress.INTERVALS[w.box]);
   }
 
   // Erros de gramática (kind "g") e de perguntas dos textos (kind "r"): ref = "lição:número".
   // Uma pergunta errada fica na lista e sai depois de acertares ERROR_CLEAR vezes seguidas
-  static ERROR_CLEAR = 2;
+  static ERROR_CLEAR = 3;
 
   recordError(src, ok) {
     if (!src) return;

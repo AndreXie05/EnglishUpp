@@ -2,35 +2,35 @@
 class HomeView extends View {
   get tab() { return "hoje"; }
 
+  // Primeiro o que há para fazer (erros, teste, lição), depois a meta, o plano e as coisas do dia
   render() {
-    const today = DateUtils.today();
-    return `<div><div class="eyebrow">${this.esc(DateUtils.format(today))}</div><h1>Bom dia! Vamos ao inglês.</h1></div>
-      ${this.stats()}
-      ${this.mascotCard()}
-      ${this.gameCard()}
-      ${this.goalCard()}
-      ${this.wordsOfMomentCard()}
-      ${this.storyCard()}
-      ${this.dailyChallengeCard()}
-      ${this.planCard()}
+    return `${this.heroCard()}
       ${this.errorsBanner()}
       ${this.testCard()}
       ${this.lessonCard()}
-      ${this.writingCard()}
+      ${this.goalCard()}
+      ${this.planCard()}
+      ${this.extrasCard()}
+      ${this.wordsOfMomentCard()}
       ${this.weekCard()}
       ${this.backupReminder()}
-      <p class="muted" style="margin:0;font-size:.9rem">Como funciona: todos os dias estudas uma lição nova. No dia seguinte, fazes um teste. Se acertas, a palavra volta daqui a 2, 4, 7, 15 e 30 dias. Se erras, volta amanhã.</p>
-      <div class="sync">${this.esc(this.app.storage.label)}</div>`;
+      <details class="hrules hhow"><summary>ℹ️ Como funciona</summary><p class="muted" style="margin:6px 0 0;font-size:.9rem">Todos os dias estudas uma lição nova. No dia seguinte, fazes um teste. Se acertas, a palavra volta daqui a 2, 4, 7, 15 e 30 dias. Se erras, volta amanhã.</p></details>`;
   }
 
-  // Modo história: aviso quando há um capítulo aberto por ler
-  storyCard() {
-    const n = StoryView.nextUnread(this.app);
-    if (!n) return "";
-    return `<section class="panel"><div class="eyebrow">📖 Modo história · ${n.city.flag} ${this.esc(n.city.city)}</div>
-      <h2>Capítulo ${n.n}: ${this.esc(n.chapter.title)} ${n.chapter.icon}</h2>
-      <p class="muted" style="margin:0">${n.n === 1 && n.city.id === STORY[0].id ? "Conhece o Leo e começa a viagem dele pelo mundo de língua inglesa." : "Há um capítulo novo da viagem do Leo à tua espera."}</p>
-      <div class="row"><button class="btn small" data-action="storyopen" data-v="${n.chapter.id}">Ler agora</button></div></section>`;
+  // Extras de hoje, numa fila de mosaicos: o desafio do dia, o capítulo da história por ler e traduzir frases
+  extrasCard() {
+    const tile = (action, v, color, icon, name, desc) => `<button class="gtile" style="--gc:${color}" data-action="${action}"${v ? ` data-v="${this.esc(v)}"` : ""}>
+      <span class="gt-top"><span class="gt-icon" aria-hidden="true">${icon}</span></span>
+      <span class="gt-body"><span class="gt-name">${name}</span><span class="gt-desc">${desc}</span></span></button>`;
+    const [, title, icon, desc] = DailyFun.todaysChallenge();
+    const best = this.progress.data.daily?.date === DateUtils.today() ? this.progress.data.daily.best : null;
+    const tiles = [tile("dchallenge", "", "#12A594", icon, `Desafio: ${title}`, best != null ? `Hoje: ${best}% · podes repetir` : `${desc} · +8 XP`)];
+    const story = StoryView.nextUnread(this.app);
+    if (story) tiles.push(tile("storyopen", story.chapter.id, "#D6409F", story.chapter.icon, `História: ${story.chapter.title}`, `${story.city.flag} ${story.city.city} · capítulo ${story.n}`));
+    const last = this.dict.themes.filter(t => this.progress.lesson(t.id))
+      .sort((a, b) => this.progress.lesson(b.id).studied.localeCompare(this.progress.lesson(a.id).studied))[0];
+    if (last) tiles.push(tile("translate", last.id, "#8E4EC6", "✍️", "Traduzir 10 frases", `Tema: ${last.pt}`));
+    return `<section class="panel"><div class="eyebrow">✨ Extras de hoje</div><div class="hextras">${tiles.join("")}</div></section>`;
   }
 
   // Lembrete discreto: sem cópia de segurança há 7 dias (ou nunca, depois de começares a estudar)
@@ -42,16 +42,27 @@ class HomeView extends View {
       <div class="row"><button class="btn small" data-action="nav" data-v="progresso">Fazer cópia agora</button></div></section>`;
   }
 
-  // Nível, com atalho para o Jogo
-  gameCard() {
-    return `<section class="panel">${GameView.playerCard(this.progress)}
-      <div class="row" style="justify-content:flex-end"><button class="btn small" data-action="nav" data-v="jogo">Abrir o Jogo</button></div></section>`;
+  // Cabeçalho: saudação conforme a hora, a mascote com a mensagem dela e o nível com a barra de XP
+  heroCard() {
+    const p = this.progress, h = new Date().getHours();
+    const hello = h < 6 ? "Boa noite" : h < 13 ? "Bom dia" : h < 20 ? "Boa tarde" : "Boa noite";
+    const [, icon, name] = DailyFun.stage(p.level), [mood, msg] = DailyFun.mood(p);
+    const crown = p.streak() >= 30 ? "👑" : p.streak() >= 7 ? "🎀" : "";
+    const lv = p.level, from = Progress.xpFor(lv), to = Progress.xpFor(lv + 1);
+    const pct = Math.round((p.xp - from) / (to - from) * 100);
+    return `<section class="panel homehero mascot ${mood}">
+      <div class="mpet" aria-hidden="true"><span class="mcrown">${crown}</span><span class="mface">${mood === "sad" ? "😢" : icon}</span>${mood === "happy" ? `<span class="mspark">✨</span>` : ""}</div>
+      <div class="hhtext"><div class="eyebrow">${this.esc(DateUtils.format(DateUtils.today()))}</div>
+        <h1>${hello}! 👋</h1>
+        <p class="hhmsg"><b>O teu ${name}:</b> ${this.esc(msg)}</p>
+        <button class="hhlevel" data-action="nav" data-v="jogo"><span class="pill now">Nível ${lv}</span><span class="hhrank">${this.esc(Rank.title(lv))}</span>
+          <span class="bar"><i style="width:${pct}%"></i></span><span class="hhxp">${p.xp} XP · faltam ${to - p.xp}</span></button></div></section>`;
   }
 
   // Meta diária: a roleta decide quantos exercícios são precisos para a sequência subir hoje
   goalCard() {
     const p = this.progress;
-    const rules = `<span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto), as perguntas de um texto, cada jogo que acabas, as lições de gramática, o desafio do dia, os desafios de 60 segundos, os cartões, as conversas, a revisão dos erros e as traduções. Ler as palavras e o mini-texto não conta. Cada um só conta uma vez por dia.</span>`;
+    const rules = `<details class="hrules"><summary>O que conta para a meta?</summary><span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto), as perguntas de um texto, cada jogo que acabas, as lições de gramática, o desafio do dia, os desafios de 60 segundos, os cartões, as conversas, a revisão dos erros e as traduções. Ler as palavras e o mini-texto não conta. Cada um só conta uma vez por dia.</span></details>`;
     if (!p.spun) {
       return `<section class="panel"><div class="eyebrow">Meta de hoje</div>
         <h2>Roda a roleta!</h2>
@@ -64,10 +75,10 @@ class HomeView extends View {
     const msg = p.goalMet
       ? `Meta cumprida! Hoje a tua sequência subiu para ${p.streak()} dia${p.streak() === 1 ? "" : "s"}.`
       : `Faltam ${left} exercício${left === 1 ? "" : "s"} para a sequência subir hoje.`;
-    return `<section class="panel"><div class="eyebrow">Meta de hoje · calhou ${p.goal}</div>
-      <h2>${Math.min(p.todayCount, p.goal)} de ${p.goal} exercícios</h2>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <p class="muted" style="margin:0">${msg}</p>${rules}</section>`;
+    return `<section class="panel hgoal ${p.goalMet ? "met" : ""}"><div class="hring" style="--p:${pct}"><b>${Math.min(p.todayCount, p.goal)}<small>/${p.goal}</small></b></div>
+      <div class="hgtext"><div class="eyebrow">🎯 Meta de hoje · calhou ${p.goal}</div>
+        <h2 style="margin:0">${p.goalMet ? "Meta cumprida! 🎉" : `${Math.min(p.todayCount, p.goal)} de ${p.goal} exercícios`}</h2>
+        <p class="muted" style="margin:0">${msg}</p>${rules}</div></section>`;
   }
 
   // Roleta com os números de 2 a 10; o ponteiro está no topo
@@ -96,13 +107,9 @@ class HomeView extends View {
     }, 4200);
   }
 
-  // Sugestões para hoje: o que está atrasado e o que vem a seguir
+  // Sugestões para hoje além do teste e da lição (que têm cartão próprio): gramática por rever, exame, um texto
   planCard() {
     const p = this.progress, items = [];
-    const due = p.dueKeys(this.dict).length;
-    if (due) items.push([`Teste de ${due} palavra${due > 1 ? "s" : ""} em atraso`, "startTest", ""]);
-    const next = p.nextTheme(this.dict);
-    if (next && !p.studiedToday(this.dict).length) items.push([`Lição nova: ${next.pt}`, "open", next.id]);
     this.dueGrammar().slice(0, 2).forEach(l => items.push([`Rever gramática: ${l.pt}`, "planGrammar", l.id]));
     const exam = this.dict.themes.map(t => t.level).filter((l, i, a) => a.indexOf(l) === i)
       .find(l => { const e = new LevelExam(l, this.app.examContext()); return e.ready && !this.progress.examPassed(l); });
@@ -110,9 +117,10 @@ class HomeView extends View {
     const text = this.suggestedText();
     if (text) items.push([`Ler e responder: ${text.title} (${text.level})`, "planText", text.id]);
     if (!items.length) return "";
-    return `<section class="panel"><div class="eyebrow">Plano para hoje</div>
+    const icons = { startTest: "✅", open: "📘", planGrammar: "📐", planExam: "🏆", planText: "📄" };
+    return `<section class="panel"><div class="eyebrow">🗓️ Também para hoje</div>
       <div class="plan">${items.map(([label, action, v]) =>
-        `<button class="theme" data-action="${action}" data-v="${v}"><span class="t">${this.esc(label)}</span></button>`).join("")}</div></section>`;
+        `<button class="theme hplan" data-action="${action}" data-v="${v}"><span class="hpicon" aria-hidden="true">${icons[action] || "⭐"}</span><span class="t">${this.esc(label)}</span><span class="hpgo" aria-hidden="true">→</span></button>`).join("")}</div></section>`;
   }
 
   dueGrammar() {
@@ -130,13 +138,6 @@ class HomeView extends View {
   }
 
   /* ----- mascote, palavras do momento, desafio do dia e resumo da semana ----- */
-
-  mascotCard() {
-    const p = this.progress, [, icon, name] = DailyFun.stage(p.level), [mood, msg] = DailyFun.mood(p);
-    const crown = p.streak() >= 30 ? "👑" : p.streak() >= 7 ? "🎀" : "";
-    return `<section class="panel mascot ${mood}"><div class="mpet" aria-hidden="true"><span class="mcrown">${crown}</span><span class="mface">${mood === "sad" ? "😢" : icon}</span>${mood === "happy" ? `<span class="mspark">✨</span>` : ""}</div>
-      <div class="mtext"><div class="eyebrow">O teu ${name} · nível ${p.level}</div><p style="margin:0;font-weight:700">${this.esc(msg)}</p></div></section>`;
-  }
 
   wordsOfMomentCard() {
     const html = this.wordsOfMomentHtml();
@@ -160,13 +161,6 @@ class HomeView extends View {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   }
 
-  dailyChallengeCard() {
-    const [, title, icon, desc] = DailyFun.todaysChallenge();
-    const best = this.progress.data.daily?.date === DateUtils.today() ? this.progress.data.daily.best : null;
-    return `<button class="gcard g3 dchal" data-action="dchallenge"><span class="gicon" aria-hidden="true">${icon}</span>
-      <span class="gname">Desafio do dia: ${title}</span><span class="gdesc">${desc} ${best != null ? `Hoje: ${best}%. Podes repetir.` : "6 perguntas · +8 XP"}</span></button>`;
-  }
-
   weekCard() {
     const w = DailyFun.week(this.progress);
     if (!w.days && !w.xp) return "";
@@ -174,8 +168,8 @@ class HomeView extends View {
     const bars = w.per.map(d => `<div class="wbar" title="${this.esc(d.d)}: ${d.xp} XP"><i style="height:${Math.round(d.xp / max * 100)}%"></i><span>${["D", "S", "T", "Q", "Q", "S", "S"][new Date(d.d + "T12:00").getDay()]}</span></div>`).join("");
     const diff = w.days - w.prevDays;
     const trend = diff > 0 ? `Mais ${diff} dia${diff > 1 ? "s" : ""} do que na semana passada.` : diff < 0 ? `Menos ${-diff} dia${diff < -1 ? "s" : ""} do que na semana passada. Vamos recuperar!` : "Igual à semana passada.";
-    return `<section class="panel"><div class="eyebrow">A tua semana</div>
-      <div class="stats"><div class="stat"><b>${w.days}/7</b><span>dias de meta</span></div><div class="stat"><b>${w.right}</b><span>respostas certas</span></div><div class="stat"><b>${w.lessons}</b><span>lições novas</span></div><div class="stat"><b>${w.xp}</b><span>XP</span></div></div>
+    return `<section class="panel"><div class="eyebrow">📅 A tua semana</div>
+      <div class="phchips"><span>🎯 ${w.days}/7 dias de meta</span><span>✓ ${w.right} certas</span><span>📘 ${w.lessons} lições</span><span>⭐ ${w.xp} XP</span></div>
       <div class="wbars" aria-hidden="true">${bars}</div>
       <p class="muted" style="margin:0">${trend}${w.xp ? ` Melhor dia: ${this.esc(DateUtils.format(w.best.d))} (${w.best.xp} XP).` : ""}</p></section>`;
   }
@@ -204,21 +198,16 @@ class HomeView extends View {
     return false;
   }
 
+  // Só aparece quando há palavras para testar (sem teste, não há nada a fazer aqui)
   testCard() {
     const due = this.progress.dueKeys(this.dict).length;
     if (due) {
-      return `<section class="panel lead"><div class="eyebrow">Teste de hoje</div>
+      return `<section class="panel lead hero htask" style="--tc:#30A46C"><span class="heroicon" aria-hidden="true">✅</span><div class="eyebrow">Teste de hoje</div>
         <h2>Tens ${due} palavra${due > 1 ? "s" : ""} para testar</h2>
         <p class="muted" style="margin:0">São palavras que estudaste nos dias anteriores. Faz o teste antes da lição nova.</p>
         <div class="row"><button class="btn" data-action="startTest">Fazer o teste</button></div></section>`;
     }
-    if (!this.progress.wordCount) {
-      return `<section class="panel"><div class="eyebrow">Teste de hoje</div>
-        <p style="margin:0">Ainda não há nada para testar. Estuda a primeira lição hoje e amanhã o teste aparece aqui.</p></section>`;
-    }
-    return `<section class="panel"><div class="eyebrow">Teste de hoje</div>
-      <p style="margin:0"><strong>Sem testes pendentes.</strong> Próximo teste: ${this.esc(DateUtils.format(this.progress.nextDueDate()))}.</p>
-      <div class="row"><button class="btn ghost small" data-action="practiceAll">Praticar na mesma</button></div></section>`;
+    return "";
   }
 
   // Aviso grande no início quando há erros por rever
@@ -230,17 +219,6 @@ class HomeView extends View {
       <h2>${n} erro${n > 1 ? "s" : ""} à espera de ti</h2>
       <p class="muted" style="margin:0">Palavras, gramática e perguntas de textos que ainda falhas. Treinar isto é o que mais ajuda.</p>
       <div class="row"><button class="btn" data-action="nav" data-v="teste">Rever agora</button></div></section>`;
-  }
-
-  writingCard() {
-    const studied = this.dict.themes.filter(t => this.progress.lesson(t.id))
-      .sort((a, b) => this.progress.lesson(b.id).studied.localeCompare(this.progress.lesson(a.id).studied));
-    if (!studied.length) return "";
-    const last = studied[0];
-    return `<section class="panel"><div class="eyebrow">Treino de hoje</div>
-      <h2>Traduz 10 frases do tema ${this.esc(last.pt)}</h2>
-      <p class="muted" style="margin:0">Ganhas pontos, e o treino fica no registo da semana.</p>
-      <div class="row"><button class="btn ghost" data-action="translate" data-v="${last.id}">Treinar</button></div></section>`;
   }
 
   // Uma palavra da lição de cada vez, com pronúncia e tradução; muda a cada 5 segundos
@@ -290,7 +268,7 @@ class HomeView extends View {
     const next = this.progress.nextTheme(this.dict);
     if (done.length) {
       const t = done[done.length - 1];
-      return `<section class="panel"><div class="eyebrow">Lição de hoje <span class="pill done">Concluída</span></div>
+      return `<section class="panel htask done" style="--tc:#30A46C"><div class="eyebrow">📘 Lição de hoje <span class="pill done">Concluída</span></div>
         <h2>${this.esc(t.pt)} <span class="muted">· ${this.esc(t.en)}</span></h2>
         <p class="muted" style="margin:0">Amanhã estas ${t.size} palavras entram no teste. Revê-as antes de dormir para te lembrares melhor.</p>
         ${this.wordCycle(t)}
@@ -298,7 +276,7 @@ class HomeView extends View {
         ${next ? `<button class="linkbtn" data-action="open" data-v="${next.id}">Adiantar: ${this.esc(next.pt)}</button>` : ""}</div></section>`;
     }
     if (next) {
-      return `<section class="panel"><div class="eyebrow">Lição ${next.number} de ${this.dict.themes.length}</div>
+      return `<section class="panel lead hero htask" style="--tc:${ThemesView.LEVEL_COLORS[next.level] || "#2F6FED"}"><span class="heroicon" aria-hidden="true">${ThemesView.icon(next)}</span><div class="eyebrow">📘 Lição ${next.number} de ${this.dict.themes.length} · ${next.level}</div>
         <h2>${this.esc(next.pt)} <span class="muted">· ${this.esc(next.en)}</span></h2>
         <p class="muted" style="margin:0">${next.size} palavras novas e um texto curto para ler e ouvir.</p>
         ${this.wordCycle(next)}

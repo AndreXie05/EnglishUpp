@@ -26,9 +26,23 @@ class GrammarView extends View {
   // Gramática tem quatro partes (lições, verbos, o guia dos tempos e as preposições), com o mesmo seletor no topo de cada uma
   static SECTIONS = [["lessons", "📐", "Lições"], ["verbs", "🔁", "Verbos"], ["tenses", "📘", "Tempos verbais"], ["preps", "📍", "Preposições"]];
 
+  // Cabeçalho de cada parte: título simples e o seletor das partes por baixo
+  static header(view, active, eyebrow, title, desc = "") {
+    return `<div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${desc ? `<p class="muted" style="margin:4px 0 0">${desc}</p>` : ""}</div>
+      ${GrammarView.sections(view, active)}`;
+  }
+
+  // Seletor das partes: 4 mosaicos a ocupar a largura toda, cada um com a sua cor, ícone e quantos itens tem
+  static SECTION_COLORS = { lessons: "#5B5BD6", verbs: "#D6409F", tenses: "#2F6FED", preps: "#12A594" };
+
   static sections(view, active) {
-    return `<div class="tabs" role="group" aria-label="Partes da gramática">${GrammarView.SECTIONS.map(([k, icon, name]) =>
-      `<button data-action="gsection" data-v="${k}" aria-pressed="${k === active}"><span aria-hidden="true">${icon}</span> ${name}</button>`).join("")}</div>`;
+    const count = {
+      lessons: `${view.app.grammar.length} lições`, verbs: `${Verb.all().length} verbos`,
+      tenses: `${TENSE_GUIDE.length} tempos`, preps: `${PrepositionView.PREPS.length} preposições`,
+    };
+    return `<div class="gsecs" role="group" aria-label="Partes da gramática">${GrammarView.SECTIONS.map(([k, icon, name]) =>
+      `<button class="gsec" style="--sc:${GrammarView.SECTION_COLORS[k]}" data-action="gsection" data-v="${k}" aria-pressed="${k === active}">
+        <span class="gsicon" aria-hidden="true">${icon}</span><span class="gstext"><b>${name}</b><small>${count[k]}</small></span></button>`).join("")}</div>`;
   }
 
   static openSection(app, section) {
@@ -71,10 +85,9 @@ class GrammarView extends View {
         <div class="eyebrow">${this.progress.grammarScore(next.id) == null ? "Próxima lição" : `Está na hora de rever${due > 1 ? ` (${due} lições à espera)` : ""}`} · ${next.level}</div>
         <h2>${this.esc(next.pt)}</h2>
         <div class="row"><button class="btn" data-action="gopen" data-v="${next.id}">Abrir lição</button></div></section>` : "";
-    return `<div><div class="eyebrow">${doneIn(this.lessons)} de ${this.lessons.length} lições feitas</div><h1>Gramática</h1></div>
-      ${GrammarView.sections(this, "lessons")}
+    return `${GrammarView.header(this, "lessons", `${doneIn(this.lessons)} de ${this.lessons.length} lições feitas`, "Gramática", "As regras do inglês explicadas em português, com exemplos e exercícios.")}
       ${hero}
-      <div class="tabs" role="group" aria-label="Nível">${ProgressView.LEVELS.map(([code]) => {
+      <div class="tabs lvtabs" role="group" aria-label="Nível">${ProgressView.LEVELS.map(([code]) => {
         const ls = this.lessons.filter(l => l.level === code);
         return `<button data-action="glevel" data-v="${code}" aria-pressed="${code === level}">${code}<span class="tabcount">${ls.length ? `${doneIn(ls)}/${ls.length}` : "em breve"}</span></button>`;
       }).join("")}</div>
@@ -84,18 +97,22 @@ class GrammarView extends View {
         : `<section class="panel"><p style="margin:0">Ainda não há lições de gramática de nível ${level}.</p></section>`}`;
   }
 
+  // Cartão de uma lição de gramática, no estilo das lições dos Temas: uma casa por exercício, cheias conforme o melhor resultado
   card(l, isNext) {
     const score = this.progress.grammarScore(l.id);
     const due = this.progress.grammarDue([l]).length;
     const n = this.lessons.filter(x => x.level === l.level).indexOf(l) + 1;
-    const pill = score == null ? `<span class="pill">Nova</span>`
-      : due ? `<span class="pill warn">🔁 Rever</span>` : `<span class="pill done">✓ ${score}%</span>`;
-    return `<button class="theme tcard ${isNext ? "next" : ""}" style="--lc:${ThemesView.LEVEL_COLORS[l.level] || "var(--accent)"}" data-action="gopen" data-v="${l.id}">
-      <div class="row" style="justify-content:space-between;width:100%"><span class="ticon" aria-hidden="true">${GrammarView.icon(l)}</span>${pill}</div>
-      <span class="eyebrow tnum">Lição ${n} · ${l.level}</span>
-      <span class="t">${this.esc(l.pt)}</span>
-      <span class="muted" style="font-size:.9rem">${l.size} exercícios</span>
-      ${score != null ? `<div class="meter" style="width:100%"><i style="width:${score}%"></i></div>` : ""}</button>`;
+    const state = score == null ? (isNext ? "next" : "new") : due ? "review" : "done";
+    const badge = { new: "Nova", next: "▶ Próxima", review: "🔁 Rever", done: `✓ ${score}%` }[state];
+    const filled = score == null ? 0 : Math.round(score / 100 * l.size);
+    const segs = Array.from({ length: l.size }, (_, k) => `<i class="${k < filled ? "on" : ""}"></i>`).join("");
+    return `<button class="lcard ${state} ${isNext && state !== "next" ? "next" : ""}" style="--lc:${ThemesView.LEVEL_COLORS[l.level] || "var(--accent)"}" data-action="gopen" data-v="${l.id}">
+      <span class="lc-top"><span class="lc-icon" aria-hidden="true">${GrammarView.icon(l)}</span>
+        <span class="lc-num">Lição ${n}</span><span class="lc-badge">${badge}</span></span>
+      <span class="lc-body"><span class="lc-title">${this.esc(l.pt)}</span>
+        <span class="lc-sub">${l.size} exercícios</span></span>
+      <span class="lc-foot"><span class="lc-parts" style="grid-template-columns:repeat(${l.size},1fr)" role="img" aria-label="${score == null ? "Ainda não feita" : `Melhor resultado ${score}%`}">${segs}</span>
+        <span class="lc-meta">${score == null ? "—" : `${score}%`}</span></span></button>`;
   }
 
   lessonPage(l) {
@@ -103,17 +120,20 @@ class GrammarView extends View {
     const score = this.progress.grammarScore(l.id);
     const color = ThemesView.LEVEL_COLORS[l.level] || "var(--accent)";
     return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Gramática ${l.level}</span><button class="linkbtn" data-action="gback">← Todas as lições</button></div>
-      <div class="ghead" style="--lc:${color}"><span class="ticon" aria-hidden="true">${GrammarView.icon(l)}</span><div><h1>${this.esc(l.pt)}</h1>
-        <span class="muted">${l.size} exercícios · ${score == null ? "ainda não feita" : `melhor resultado ${score}%`}</span></div></div>
+      <section class="panel ghero" style="--gc:${color}"><span class="ghicon" aria-hidden="true">${GrammarView.icon(l)}</span>
+        <div class="ghtext"><div class="eyebrow">Lição de gramática · ${l.level}</div><h1>${this.esc(l.pt)}</h1>
+        <div class="phchips"><span>✏️ ${l.size} exercícios</span><span>${score == null ? "🆕 Ainda não feita" : `🏅 Melhor ${score}%`}</span></div></div></section>
       ${this.introHtml(l)}
       ${l.rules.length ? `<section class="panel"><h2>🛠️ Como se forma</h2><div class="grules">${l.rules.map(([form, note]) =>
         `<div class="grule" style="--lc:${color}"><b>${this.esc(form)}</b><span class="muted">${this.rich(note)}</span></div>`).join("")}</div></section>` : ""}
       <section class="panel"><h2>💬 Exemplos</h2><div class="gexs">${l.examples.map(([en, pt]) =>
         `<div class="gex" style="--lc:${color}"><span class="ex">${this.esc(en)}</span><i class="muted">${this.esc(pt)}</i></div>`).join("")}</div></section>
-      <div class="row" style="justify-content:center"><button class="btn" data-action="gstart" data-v="${l.id}">✏️ Fazer os ${l.size} exercícios</button></div>
-      <div class="row" style="justify-content:space-between">
-        ${prev ? `<button class="linkbtn" data-action="gopen" data-v="${prev.id}">← ${this.esc(prev.pt)}</button>` : "<span></span>"}
-        ${next ? `<button class="linkbtn" data-action="gopen" data-v="${next.id}">${this.esc(next.pt)} →</button>` : ""}</div>`;
+      <section class="panel gcta" style="--gc:${color}"><div><h2 style="margin:0">Pronto para praticar?</h2>
+        <p class="muted" style="margin:0">${l.size} exercícios de escolher, escrever e reescrever.${score == null ? "" : ` O teu melhor: ${score}%.`}</p></div>
+        <button class="btn" data-action="gstart" data-v="${l.id}">✏️ Fazer os exercícios</button></section>
+      <div class="gnav">
+        ${prev ? `<button class="gnavbtn" data-action="gopen" data-v="${prev.id}"><span class="muted">← Anterior</span><b>${GrammarView.icon(prev)} ${this.esc(prev.pt)}</b></button>` : "<span></span>"}
+        ${next ? `<button class="gnavbtn next" data-action="gopen" data-v="${next.id}"><span class="muted">Seguinte →</span><b>${GrammarView.icon(next)} ${this.esc(next.pt)}</b></button>` : ""}</div>`;
   }
 
   // Parte um texto em pedaços pelo separador, sem cortar um **negrito** nem uns parênteses a meio
