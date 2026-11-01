@@ -9,7 +9,7 @@ class HomeView extends View {
       ${this.mascotCard()}
       ${this.gameCard()}
       ${this.goalCard()}
-      ${this.wordOfDayCard()}
+      ${this.wordsOfMomentCard()}
       ${this.dailyChallengeCard()}
       ${this.planCard()}
       ${this.errorsBanner()}
@@ -42,7 +42,7 @@ class HomeView extends View {
   // Meta diária: a roleta decide quantos exercícios são precisos para a sequência subir hoje
   goalCard() {
     const p = this.progress;
-    const rules = `<span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto), as perguntas de um texto, cada jogo que acabas, as lições de gramática, o desafio do dia, os desafios de 60 segundos, os cartões, as conversas, a revisão dos erros, as traduções e o diário. Ler as palavras e o mini-texto não conta. Cada um só conta uma vez por dia.</span>`;
+    const rules = `<span class="muted" style="font-size:.85rem">Contam os exercícios de cada lição (frases, ligar, escolher a tradução, pronúncia, escrever e teste misto), as perguntas de um texto, cada jogo que acabas, as lições de gramática, o desafio do dia, os desafios de 60 segundos, os cartões, as conversas, a revisão dos erros e as traduções. Ler as palavras e o mini-texto não conta. Cada um só conta uma vez por dia.</span>`;
     if (!p.spun) {
       return `<section class="panel"><div class="eyebrow">Meta de hoje</div>
         <h2>Roda a roleta!</h2>
@@ -120,7 +120,7 @@ class HomeView extends View {
     return todo.find(t => t.level === last?.level) || todo[0];
   }
 
-  /* ----- mascote, palavra do dia, desafio do dia e resumo da semana ----- */
+  /* ----- mascote, palavras do momento, desafio do dia e resumo da semana ----- */
 
   mascotCard() {
     const p = this.progress, [, icon, name] = DailyFun.stage(p.level), [mood, msg] = DailyFun.mood(p);
@@ -129,8 +129,13 @@ class HomeView extends View {
       <div class="mtext"><div class="eyebrow">O teu ${name} · nível ${p.level}</div><p style="margin:0;font-weight:700">${this.esc(msg)}</p></div></section>`;
   }
 
-  wordOfDayCard() {
-    const words = DailyFun.wordsOfDay(this.app);
+  wordsOfMomentCard() {
+    const html = this.wordsOfMomentHtml();
+    return html ? `<section class="panel wod" id="wod">${html}</section>` : "";
+  }
+
+  wordsOfMomentHtml() {
+    const words = DailyFun.wordsOfMoment(this.app);
     if (!words.length) return "";
     const item = w => {
       const e = DailyFun.examples(this.app, w)[0];
@@ -138,7 +143,12 @@ class HomeView extends View {
         <div class="pt" style="font-weight:700">${this.esc(w.pt)}</div>
         <div class="ex">${this.esc(e.en)}${e.pt ? `<br><i>${this.esc(e.pt)}</i>` : ""}</div>${this.cambridgeLink(w)}</div>`;
     };
-    return `<section class="panel wod"><div class="eyebrow">Palavras do dia</div>${words.map(item).join("")}</section>`;
+    return `<div class="row" style="justify-content:space-between"><div class="eyebrow">✨ Palavras do momento</div><span class="muted wodtime">⏳ novas em <b id="wodleft">${this.momentLeftText()}</b></span></div>${words.map(item).join("")}`;
+  }
+
+  momentLeftText() {
+    const s = Math.ceil(DailyFun.momentLeft() / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   }
 
   dailyChallengeCard() {
@@ -234,6 +244,7 @@ class HomeView extends View {
   }
 
   afterRender() {
+    this.watchMoment();
     clearInterval(this.cycleTimer);
     if (!document.getElementById("wordcycle")) return;
     this.cycleTimer = setInterval(() => {
@@ -242,6 +253,24 @@ class HomeView extends View {
       this.cycleIndex = (this.cycleIndex + 1) % this.cycleTheme.words.length;
       box.innerHTML = this.cycleHtml();
     }, 5000);
+  }
+
+  // Contagem decrescente das palavras do momento; quando chega a zero, troca as palavras sem refazer o ecrã
+  watchMoment() {
+    clearInterval(this.momentTimer);
+    if (!document.getElementById("wod")) return;
+    let moment = DailyFun.moment();
+    this.momentTimer = setInterval(() => {
+      const box = document.getElementById("wod");
+      if (!box || this.app.view !== this) return clearInterval(this.momentTimer); // o utilizador mudou de ecrã
+      if (DailyFun.moment() !== moment) {
+        moment = DailyFun.moment();
+        box.innerHTML = this.wordsOfMomentHtml();
+        box.classList.remove("fresh");
+        void box.offsetWidth; // recomeça a animação
+        box.classList.add("fresh");
+      } else document.getElementById("wodleft").textContent = this.momentLeftText();
+    }, 1000);
   }
 
   lessonCard() {

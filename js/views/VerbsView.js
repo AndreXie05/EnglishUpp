@@ -11,7 +11,7 @@ class VerbsView extends View {
     this.query = "";
   }
 
-  get tab() { return "verbos"; }
+  get tab() { return "gramatica"; }
 
   get verbs() {
     return Verb.all().filter(v => (this.filter === "all" || (this.filter === "irregular") === v.irregular) && v.matches(this.query))
@@ -26,9 +26,9 @@ class VerbsView extends View {
   listPage() {
     const all = Verb.all(), best = this.progress.grammarScore("verbs");
     return `<div><div class="eyebrow">${all.length} verbos · ${all.filter(v => v.irregular).length} irregulares</div><h1>Verbos</h1></div>
+      ${GrammarView.sections(this, "verbs")}
       <p class="muted" style="margin:0">Os verbos mais usados, com o passado, o particípio passado e a conjugação em cada tempo. Clica num verbo para ver a tabela completa.</p>
       <div class="gamegrid">
-        <button class="gcard g2" data-action="vtenses"><span class="gicon" aria-hidden="true">📘</span><span class="gname">Os tempos explicados</span><span class="gdesc">Lê primeiro: presente, passado, futuro…</span></button>
         <button class="gcard g5" data-action="vdrill"><span class="gicon" aria-hidden="true">🎯</span><span class="gname">Treinar ${this.filter === "all" ? "todos" : this.filter === "regular" ? "os regulares" : "os irregulares"}</span>
           <span class="gdesc">15 perguntas${best != null ? ` · melhor ${best}%` : ""}</span></button>
         <button class="gcard g4" data-action="vchallenge"><span class="gicon" aria-hidden="true">⏱️</span><span class="gname">Desafio de 60 s</span><span class="gdesc">Quantos acertas em 1 minuto?</span></button>
@@ -92,8 +92,8 @@ class VerbsView extends View {
         ${g.note ? `<p class="muted" style="margin:0">💡 ${this.rich(g.note)}</p>` : ""}
         <div class="row"><button class="btn small ghost" data-action="vdrilltense" data-v="${g.tense}">Treinar só este tempo</button>${lesson ? `<button class="linkbtn" data-action="vlesson" data-v="${lesson.id}">Lição completa: ${this.esc(lesson.pt)}</button>` : ""}</div></section>`;
     }
-    return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Verbos</span><button class="linkbtn" data-action="vback">← Todos os verbos</button></div>
-      <h1>Os tempos verbais</h1>
+    return `<div><div class="eyebrow">Gramática</div><h1>Os tempos verbais</h1></div>
+      ${GrammarView.sections(this, "tenses")}
       <div class="tabs" role="group" aria-label="Partes do guia">${tabs}</div>
       <div class="bar"><i style="width:${step / last * 100}%"></i></div>
       ${body}
@@ -135,6 +135,8 @@ class VerbsView extends View {
       case "vfilter":
         this.filter = value;
         break;
+      case "gsection":
+        return GrammarView.openSection(this.app, value);
       case "vtenses":
         this.page = "tenses";
         this.step = 0;

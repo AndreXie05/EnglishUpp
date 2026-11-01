@@ -1,4 +1,4 @@
-// Coisas do dia: palavra do dia, desafio do dia, resumo da semana e a mascote
+// Coisas do dia: palavras do momento, desafio do dia, resumo da semana e a mascote
 class DailyFun {
   /* ----- ajudas ----- */
 
@@ -30,15 +30,31 @@ class DailyFun {
     return app.dict.themes.filter(t => t.level === "A1").flatMap(t => t.words);
   }
 
-  /* ----- palavra do dia ----- */
+  /* ----- palavras do momento ----- */
 
-  // Três palavras soltas de qualquer lição, estudada ou não: uma de A1–A2, uma de B1–B2 e uma de C1–C2, fixas durante o dia
-  static wordsOfDay(app) {
+  static MOMENT_MINUTES = 10;
+
+  // Número do bloco de 10 minutos atual (muda às :00, :10, :20…) e quantos milissegundos faltam para o próximo
+  static moment() {
+    return Math.floor(Date.now() / (DailyFun.MOMENT_MINUTES * 60000));
+  }
+
+  static momentLeft() {
+    const ms = DailyFun.MOMENT_MINUTES * 60000;
+    return ms - Date.now() % ms;
+  }
+
+  static momentHash(salt) {
+    return (DailyFun.moment() * 2654435761 + salt * 40503) >>> 0;
+  }
+
+  // Três palavras soltas de qualquer lição, estudada ou não: uma de A1–A2, uma de B1–B2 e uma de C1–C2, que mudam a cada 10 minutos
+  static wordsOfMoment(app) {
     const all = app.dict.allWords.filter(w => !w.en.includes(" ")).sort((a, b) => a.key.localeCompare(b.key));
     const level = w => app.dict.theme(w.themeId).level;
     return [["A1", "A2"], ["B1", "B2"], ["C1", "C2"]].map((levels, i) => {
       const list = all.filter(w => levels.includes(level(w)));
-      return list.length ? list[DailyFun.dayHash(11 + i) % list.length] : null;
+      return list.length ? list[DailyFun.momentHash(11 + i) % list.length] : null;
     }).filter(Boolean);
   }
 
@@ -58,7 +74,7 @@ class DailyFun {
     return (DailyFun._bank = { withPt, plain });
   }
 
-  // Dois exemplos da palavra do dia: frases novas de WORD_EXAMPLES; se a palavra não tiver, o da própria lição e outro, fixo para o dia (com tradução se houver)
+  // Dois exemplos de uma palavra do momento: frases novas de WORD_EXAMPLES; se a palavra não tiver, o da própria lição e outro (com tradução se houver)
   static examples(app, word) {
     const own = typeof WORD_EXAMPLES !== "undefined" && WORD_EXAMPLES[word.en];
     if (own) return own.map(([en, pt]) => ({ en, pt }));
@@ -68,7 +84,7 @@ class DailyFun {
     const first = { en: word.exEn, pt: word.exPt };
     for (const list of [bank.withPt, bank.plain]) {
       const found = list.filter(s => s.en !== word.exEn && has(s));
-      if (found.length) return [first, found[DailyFun.dayHash(2) % found.length]];
+      if (found.length) return [first, found[DailyFun.momentHash(2) % found.length]];
     }
     return [first];
   }

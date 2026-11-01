@@ -85,7 +85,6 @@ class GameView extends View {
   }
 
   gamesPanel() {
-    const errors = this.progress.hasErrors();
     return `<section class="panel"><div class="eyebrow">Jogos</div>
       <p class="muted" style="margin:0">Jogam com as palavras de ${this.scopeLabel()}. Cada jogo dá XP e conta para as missões.</p>
       <div class="tabs" role="group" aria-label="Temas dos jogos">${[["all", "Todos os temas"], ["studied", "Só estudados"], ...ProgressView.LEVELS.map(([c]) => [c, c])].map(([v, l]) =>
@@ -112,7 +111,6 @@ class GameView extends View {
           ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
           ["vchallenge", "", "⏱️", "Verbos em 60 s", "Irregulares em todos os tempos", 5],
           ["hardwords", "", "🎯", "Palavras difíceis", "As que mais erras, com dicas", 6],
-          ["nav", "teste", "🔁", "Treino de erros", errors ? "Revê o que ainda falhas" : "Ainda sem erros por rever", 8],
         ].map(([act, v, icon, name, desc, c]) => `<button class="gcard g${c}" data-action="${act}"${v ? ` data-v="${v}"` : ""}>
           <span class="gicon" aria-hidden="true">${icon}</span><span class="gname">${name}</span><span class="gdesc">${desc}</span></button>`).join("")}
       </div></section>`;

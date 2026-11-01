@@ -64,7 +64,6 @@ class App {
       escape: () => new EscapeView(this),
       temas: () => new ThemesView(this),
       teste: () => new TestView(this),
-      escrita: () => new WritingView(this),
       textos: () => new TextsView(this),
       frases: () => new PhrasesView(this),
       gramatica: () => new GrammarView(this),

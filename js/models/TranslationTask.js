@@ -9,6 +9,7 @@ class TranslationTask {
 
   check(text) {
     const diff = TextDiff.compare(text, this.en);
-    return { correct: diff.errors === 0, almost: diff.errors === 1, diff };
+    // other: certa, mas dita de outra forma (mostra-se a frase de referência como alternativa)
+    return { correct: diff.errors === 0, almost: diff.errors === 1, other: diff.errors === 0 && !diff.exact, diff };
   }
 }

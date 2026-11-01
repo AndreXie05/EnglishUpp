@@ -43,7 +43,7 @@ const WORD_IPA = {
   pros: "prəʊz", cons: "kɒnz", against: "əˈɡenst", grandma: "ˈɡrænmɑː", madam: "ˈmædəm", thou: "ðaʊ",
   // contracções
   "doesn't": "ˈdʌznt", "didn't": "ˈdɪdnt", "haven't": "ˈhævnt", "couldn't": "ˈkʊdnt", "won't": "wəʊnt",
-  "i'm": "aɪm", "i'll": "aɪl", "we'll": "wiːl",
+  "i'm": "aɪm", "i'll": "aɪl", "we'll": "wiːl", "i'd": "aɪd", "i've": "aɪv", "you'd": "juːd", "you'll": "juːl",
   // letras e siglas
   b: "biː", c: "siː", d: "diː", s: "es", x: "eks", id: "ˌaɪˈdiː", cv: "ˌsiːˈviː", usb: "ˌjuːesˈbiː", usa: "ˌjuːesˈeɪ",
   eu: "ˌiːˈjuː", ceo: "ˌsiːiːˈəʊ", kpis: "ˌkeɪpiːˈaɪz", nasa: "ˈnæsə", sim: "sɪm", nav: "næv",
@@ -70,4 +70,8 @@ const WORD_IPA = {
   amara: "əˈmɑːrə", julia: "ˈdʒuːliə", juliet: "ˈdʒuːliət", mona: "ˈməʊnə", lisa: "ˈliːsə",
   mozart: "ˈməʊtsɑːt", einstein: "ˈaɪnstaɪn", socrates: "ˈsɒkrətiːz", sartre: "ˈsɑːtrə", aesop: "ˈiːsɒp",
   picasso: "pɪˈkæsəʊ", beethoven: "ˈbeɪtəʊvn",
+  // palavras das frases soltas (looseSentences.js) que não estão no dicionário
+  ability: "əˈbɪləti", acclaim: "əˈkleɪm", aware: "əˈweə", bound: "baʊnd", deadlock: "ˈdedlɒk", fascinated: "ˈfæsɪneɪtɪd",
+  instrumental: "ˌɪnstrəˈmentl", leisure: "ˈleʒə", paves: "peɪvz", renew: "rɪˈnjuː", tendency: "ˈtendənsi",
+  uncanny: "ʌnˈkæni", verge: "vɜːdʒ", widespread: "ˈwaɪdspred",
 };

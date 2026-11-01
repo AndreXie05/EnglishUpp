@@ -1,17 +1,43 @@
-// Frases úteis por situação, com treino de escolha
+// Frases: úteis por situação (com treino de escolha) ou soltas, uma a uma, para vocabulário e pronúncia
 class PhrasesView extends View {
   constructor(app, level = null) {
     super(app);
     this.level = level;
     this.open = null;
+    this.mode = "situations"; // ou "loose"
+    this.looseLevel = null;
+    this.shuffleLoose();
   }
 
   get tab() { return "frases"; }
 
+  // Frases soltas: as de looseSentences.js e as de freeSentences.js, sem repetidas: [{ en, pt, level }]
+  static loose() {
+    if (!PhrasesView._loose) {
+      const seen = new Set();
+      PhrasesView._loose = [...LOOSE_SENTENCES, ...FREE_SENTENCES].filter(([en]) => !seen.has(en) && seen.add(en)).map(([en, pt, level]) => ({ en, pt, level }));
+    }
+    return PhrasesView._loose;
+  }
+
+  shuffleLoose() {
+    this.looseList = Utils.shuffle(PhrasesView.loose().filter(x => !this.looseLevel || x.level === this.looseLevel));
+    this.pos = 0;
+    this.reveal = false;
+    this.wordInfo = null;
+  }
+
+  modeSwitch() {
+    return `<div class="gswitch two" role="group" aria-label="Tipo de frases">${[["situations", "💬", "Por situação"], ["loose", "🎲", "Frases soltas"]].map(([k, icon, name]) =>
+      `<button data-action="pmode" data-v="${k}" aria-pressed="${this.mode === k}"><span aria-hidden="true">${icon}</span> ${name}</button>`).join("")}</div>`;
+  }
+
   render() {
+    if (this.mode === "loose") return this.looseScreen();
     const levels = ["A1", "A2", "B1", "B2", "C1", "C2"].filter(l => PHRASES.some(p => p.level === l));
     const list = this.level ? PHRASES.filter(p => p.level === this.level) : PHRASES;
     return `<div><div class="eyebrow">${PHRASES.length} situações · ${PHRASES.reduce((n, p) => n + p.lines.length, 0)} frases</div><h1>Frases úteis</h1></div>
+      ${this.modeSwitch()}
       <div class="tabs" role="group" aria-label="Nível"><button data-action="plevel" data-v="" aria-pressed="${!this.level}">Todas</button>${levels.map(l =>
         `<button data-action="plevel" data-v="${l}" aria-pressed="${this.level === l}">${l}</button>`).join("")}</div>
       ${this.open ? this.openPanel(PHRASES.find(p => p.id === this.open)) : ""}
@@ -49,6 +75,52 @@ class PhrasesView extends View {
       ${ipa ? `<div class="ipa">/${this.esc(ipa)}/</div>` : ""}<div class="muted">${this.esc(pt)}</div></div>`;
   }
 
+  // Uma frase solta de cada vez: cada palavra pode ser tocada para ver o significado e a pronúncia
+  looseScreen() {
+    const list = this.looseList, x = list[this.pos], total = PhrasesView.loose().length;
+    const levels = ["A1", "A2", "B1", "B2", "C1"];
+    const tabs = `<div class="tabs" role="group" aria-label="Nível"><button data-action="plooselevel" data-v="" aria-pressed="${!this.looseLevel}">Todas</button>${levels.map(l =>
+      `<button data-action="plooselevel" data-v="${l}" aria-pressed="${this.looseLevel === l}">${l}</button>`).join("")}</div>`;
+    const color = ThemesView.LEVEL_COLORS[x.level] || "var(--accent)";
+    const words = x.en.split(/(\s+)/).map(tok => {
+      const m = tok.match(/^([^A-Za-z]*)([A-Za-z][A-Za-z'’-]*)(.*)$/);
+      if (!m) return this.esc(tok);
+      const w = m[2].toLowerCase();
+      return `${this.esc(m[1])}<button class="lw ${this.wordInfo === w ? "on" : ""}" data-action="pword" data-v="${this.esc(w)}">${this.esc(m[2])}</button>${this.esc(m[3])}`;
+    }).join("");
+    const ipa = this.app.ipa.of(x.en);
+    return `<div><div class="eyebrow">${total} frases para vocabulário e pronúncia</div><h1>Frases úteis</h1></div>
+      ${this.modeSwitch()}
+      ${tabs}
+      <section class="panel loosecard" style="--lc:${color}">
+        <div class="row" style="justify-content:space-between"><span class="pill" style="color:var(--lc);border-color:var(--lc)">${x.level}</span><span class="muted">${this.pos + 1} / ${list.length}</span></div>
+        <p class="loose-en">${words}</p>
+        ${ipa ? `<div class="ipa loose-ipa">/${this.esc(ipa)}/</div>` : ""}
+        ${this.wordInfo ? this.wordBox(this.wordInfo) : `<p class="muted" style="margin:0;font-size:.9rem">Toca numa palavra para ver o que significa.</p>`}
+        ${this.reveal ? `<div class="loose-pt">${this.esc(x.pt)}</div>`
+          : `<button class="btn ghost" data-action="preveal">👁 Ver tradução</button>`}
+      </section>
+      <div class="row" style="justify-content:space-between"><button class="btn ghost" data-action="pstep" data-v="-1" ${this.pos === 0 ? "disabled" : ""}>← Anterior</button>
+        <button class="linkbtn" data-action="pshuffle">🔀 Baralhar</button>
+        <button class="btn" data-action="pstep" data-v="1">Seguinte →</button></div>
+      <p class="muted" style="margin:0;font-size:.85rem;text-align:center">Teclas: ← → para mudar · Enter para ver a tradução</p>`;
+  }
+
+  // Significado e pronúncia de uma palavra da frase (pelo dicionário, com went → go, cats → cat…)
+  wordBox(w) {
+    const e = this.dict.findEntry(w), ipa = this.app.ipa.word(w);
+    return `<div class="wordbox"><b>${this.esc(w)}</b>${ipa ? ` <span class="ipa">/${this.esc(ipa)}/</span>` : ""}
+      ${e ? `<span>= ${this.esc(e.pt)}</span>${e.en.toLowerCase() !== w ? ` <span class="muted">(de <i>${this.esc(e.en)}</i>)</span>` : ""}`
+        : `<span class="muted">palavra de ligação: o sentido vê-se na tradução da frase</span>`}</div>`;
+  }
+
+  onKey(e) {
+    if (this.mode !== "loose") return;
+    if (e.key === "ArrowRight") this.onAction("pstep", 1);
+    else if (e.key === "ArrowLeft") this.onAction("pstep", -1);
+    else if (e.key === "Enter" && e.target.tagName !== "BUTTON") this.onAction("preveal");
+  }
+
   // Treino: dada a frase em português, escolher a frase em inglês
   lesson(p) {
     const exercises = p.lines.map(([en, pt]) => {
@@ -61,6 +133,19 @@ class PhrasesView extends View {
   onAction(action, value) {
     switch (action) {
       case "plevel": this.level = value || null; break;
+      case "pmode": this.mode = value; break;
+      case "plooselevel": this.looseLevel = value || null; this.shuffleLoose(); break;
+      case "pshuffle": this.shuffleLoose(); break;
+      case "preveal": this.reveal = true; break;
+      case "pword": this.wordInfo = this.wordInfo === value ? null : value; break;
+      case "pstep": {
+        const pos = this.pos + Number(value);
+        if (pos < 0) return true;
+        // Ao chegar ao fim, baralha outra vez e recomeça
+        if (pos >= this.looseList.length) this.shuffleLoose();
+        else { this.pos = pos; this.reveal = false; this.wordInfo = null; }
+        break;
+      }
       case "ptoggle": this.open = this.open === value ? null : value; break;
       case "ptrain":
         this.app.show(new GrammarQuizView(this.app, new GrammarQuiz(this.lesson(PHRASES.find(p => p.id === value)))));

@@ -21,7 +21,12 @@ class TranslationView extends View {
 
   get dictOk() { return true; }
 
-  get tab() { return "escrita"; }
+  get tab() { return "temas"; }
+
+  // Saída: a lição do tema treinado (o treino abre-se a partir de uma lição ou do Hoje)
+  get exitButton() {
+    return this.themes.length === 1 ? `data-action="open" data-v="${this.esc(this.themes[0].id)}"` : `data-action="nav" data-v="hoje"`;
+  }
 
   get task() {
     return this.tasks[this.index];
@@ -58,7 +63,7 @@ class TranslationView extends View {
     const hint = this.showHint && t.word
       ? `<div class="muted">Palavra-chave: <span class="chip">${this.esc(t.word.en)}</span> = ${this.esc(t.word.pt)}</div>`
       : t.word ? `<button class="linkbtn" data-action="hint" style="align-self:flex-start">Preciso de ajuda</button>` : "";
-    return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Treino · ${this.esc(this.title)} · ${this.index + 1} de ${this.tasks.length}</span><button class="linkbtn" data-action="nav" data-v="escrita">Sair</button></div>
+    return `<div class="row" style="justify-content:space-between"><span class="eyebrow">Treino · ${this.esc(this.title)} · ${this.index + 1} de ${this.tasks.length}</span><button class="linkbtn" ${this.exitButton}>Sair</button></div>
       <div class="bar"><i style="width:${Math.round(this.index / this.tasks.length * 100)}%"></i></div>
       <div class="row"><span class="pill now">${this.points} pontos</span>${this.combo > 1 ? `<span class="pill done">Combo x${this.combo}</span>` : ""}</div>
       <section class="panel" style="gap:16px">
@@ -78,12 +83,13 @@ class TranslationView extends View {
     const mine = ops.filter(o => o.type !== "missing")
       .map(o => o.type === "same" ? `<span>${this.esc(o.word)}</span>` : `<del>${this.esc(o.word)}</del>`).join(" ");
     const right = ops.filter(o => o.type !== "extra")
-      .map(o => o.type === "same" ? `<span>${this.esc(o.word)}</span>` : `<ins>${this.esc(o.word)}</ins>`).join(" ");
-    const title = r.correct ? "Certo!" : r.almost ? "Quase! Só há uma diferença." : `Ainda não. Há ${r.diff.errors} diferenças.`;
+      .map(o => o.type === "same" ? `<span>${this.esc(o.expected)}</span>` : `<ins>${this.esc(o.word)}</ins>`).join(" ");
+    const title = r.other ? "Certo! Há várias formas de dizer isto." : r.correct ? "Certo!" : r.almost ? "Quase! Só há uma diferença." : `Ainda não. Há ${r.diff.errors} diferenças.`;
     return `<div class="fb ${r.correct ? "ok" : "no"}">${title} <strong>+${this.gained} pontos</strong></div>
+      ${r.other ? `<div class="muted">Outra forma de dizer: <b>${this.esc(t.en)}</b></div>` : ""}
       ${r.correct ? "" : `<div class="diff">
         <div><span class="eyebrow">A tua resposta</span><p>${mine || "<em>(vazio)</em>"}</p></div>
-        <div><span class="eyebrow">Correto</span><p>${right}</p></div>
+        <div><span class="eyebrow">Uma resposta certa</span><p>${right}</p></div>
         <p class="muted" style="margin:0;font-size:.85rem"><del>riscado</del> = está a mais ou errado · <ins>verde</ins> = faltou</p></div>`}
       ${this.example(t.en, t.pt)}
       <div class="row"><button class="btn" id="nextbtn" data-action="nextTr">Continuar</button>${t.word ? this.cambridgeLink(t.word) : ""}</div>`;
@@ -110,7 +116,7 @@ class TranslationView extends View {
       </div>
       <p class="muted" style="margin:0">Este treino ficou guardado no registo da semana e desaparece sozinho ao fim de 7 dias.</p>
       <div class="row"><button class="btn" data-action="translateAgain">Jogar outra vez</button>
-        <button class="btn ghost" data-action="nav" data-v="escrita">Voltar à escrita</button></div>`;
+        <button class="btn ghost" ${this.exitButton}>${this.themes.length === 1 ? "Voltar à lição" : "Voltar"}</button></div>`;
   }
 
   onSubmit(form) {

@@ -53,8 +53,9 @@ class Missions {
   // Missões de hoje e da semana, com o progresso de cada uma
   static active(p) {
     const today = DateUtils.today(), week = Missions.weekStart(today);
-    // Sem erros por rever, a missão de revisão não faz sentido (mas fica se já a começaste hoje)
-    const usable = list => p.hasErrors() || p.day().review ? list : list.filter(m => m[3] !== "review");
+    // Sem erros por rever, a missão de revisão não faz sentido (mas fica se já a começaste hoje).
+    // O diário já não tem aba, por isso as missões de diário saem
+    const usable = list => (p.hasErrors() || p.day().review ? list : list.filter(m => m[3] !== "review")).filter(m => m[3] !== "diary");
     const build = (list, scope, seed, from) => list.map(([id, title, target, metric, reward]) => {
       const key = `${scope}:${seed}:${id}`;
       const value = Math.min(target, Missions.value(p, metric, from, today));
