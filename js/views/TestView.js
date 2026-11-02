@@ -16,12 +16,12 @@ class TestView extends View {
     return new ErrorReview(this.progress, this.dict, this.app.grammar, this.app.texts);
   }
 
-  // Treino dos erros: palavras, gramática e perguntas dos textos que ainda falhas, por nível ou por tema
+  // Treino dos erros: palavras e gramática que ainda falhas, por nível ou por tema
   errorsCard() {
     const er = this.review;
     if (!er.items.length) {
       return `<section class="panel tcardx" style="--tc:#E5484D"><div class="tchead"><span class="tcicon" aria-hidden="true">🎯</span><h2>Treino dos teus erros</h2></div>
-        <p class="muted" style="margin:0">Ainda não tens erros por rever. Quando falhares uma palavra, um exercício de gramática ou uma pergunta de um texto, aparece aqui.</p></section>`;
+        <p class="muted" style="margin:0">Ainda não tens erros por rever. Quando falhares uma palavra ou um exercício de gramática, aparece aqui.</p></section>`;
     }
     const c = er.counts(this.scope);
     const levels = ProgressView.LEVELS.map(([code]) => [code, er.levelCount(code)]).filter(([, n]) => n);
@@ -36,10 +36,10 @@ class TestView extends View {
         <span class="egicon" aria-hidden="true">${icon(g)}</span><span class="egname">${this.esc(g.label.replace(/^(Gramática|Texto): /, ""))}</span><span class="egn">${g.n}</span></button>`)].join("")}</div>` : "";
     const buttons = [];
     if (c.w) buttons.push(`<button class="btn" data-action="trainWords">Palavras (${c.w})</button>`);
-    if (c.g + c.r) buttons.push(`<button class="btn ${c.w ? "ghost" : ""}" data-action="trainGrammar">Gramática e textos (${c.g + c.r})</button>`);
+    if (c.g) buttons.push(`<button class="btn ${c.w ? "ghost" : ""}" data-action="trainGrammar">Gramática (${c.g})</button>`);
     return `<section class="panel tcardx" style="--tc:#E5484D"><div class="tchead"><span class="tcicon" aria-hidden="true">🎯</span><h2>Treino dos teus erros</h2><span class="tcbig">${er.levelCount(null)}</span></div>
-      <div class="ecounts"><span>📚 ${c.w} palavra${c.w === 1 ? "" : "s"}</span><span>📐 ${c.g} de gramática</span><span>📄 ${c.r} de textos</span></div>
-      <p class="muted" style="margin:0">Cada treino é novo: escolho ao acaso entre as perguntas que ainda falhas. Cada erro só sai da lista quando acertas ${Progress.ERROR_CLEAR} vezes seguidas; se voltares a falhar, a contagem recomeça.</p>
+      <div class="ecounts"><span>📚 ${c.w} palavra${c.w === 1 ? "" : "s"}</span><span>📐 ${c.g} de gramática</span></div>
+      <p class="muted" style="margin:0">Cada treino é novo: escolho ao acaso entre as perguntas que ainda falhas. O que acertares sai da lista; o que errares fica para o próximo treino.</p>
       <div class="tabs lvtabs" role="group" aria-label="Nível">${tab("", "Todos", er.levelCount(null))}${levels.map(([code, n]) => tab(code, code, n)).join("")}</div>
       ${chips}
       <div class="row">${buttons.join("")}</div></section>`;

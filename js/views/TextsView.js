@@ -93,7 +93,7 @@ class TextsView extends View {
   onKey(e) {
     if (!this.text) return;
     const n = Number(e.key), qs = this.text.questions;
-    if (e.key === "ArrowRight") this.onAction("qnext");
+    if (e.key === "ArrowRight" || (e.key === "Enter" && e.target.tagName !== "BUTTON" && this.answers[this.qi] !== undefined)) this.onAction("qnext");
     else if (e.key === "ArrowLeft") this.onAction("qprev");
     else if (n >= 1 && n <= 4 && this.qi < qs.length && this.answers[this.qi] === undefined && qs[this.qi].options[n - 1] !== undefined) {
       this.onAction("tpick", String(n - 1), { dataset: { q: String(this.qi) } });

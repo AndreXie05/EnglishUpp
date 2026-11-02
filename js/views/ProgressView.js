@@ -136,7 +136,7 @@ class ProgressView extends View {
     const body = hard.length
       ? `<div class="phard">${hard.map(({ word, wrong }) => `<div class="phw"><b>${this.esc(word.en)}</b><span class="muted">${this.esc(word.pt)}</span><span class="phx">${wrong}✗</span></div>`).join("")}</div>`
       : `<p class="muted" style="margin:0">Ainda sem erros registados.</p>`;
-    return `<section class="panel"><h2>🎯 Palavras difíceis</h2>${body}${hard.length ? `<div class="row"><button class="btn ghost small" data-action="hardwords">Ver todas e treinar</button></div>` : ""}</section>`;
+    return `<section class="panel"><h2>🎯 Palavras difíceis</h2>${body}</section>`;
   }
 
   /* ----- cópia de segurança: exportar e importar o progresso ----- */

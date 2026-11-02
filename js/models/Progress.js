@@ -240,6 +240,13 @@ class Progress {
     return dict.themes.find(t => !this.lesson(t.id));
   }
 
+  // Onde estás no mapa: a primeira lição por concluir a seguir à última concluída (só uma)
+  currentTheme(dict) {
+    let last = -1;
+    dict.themes.forEach((t, i) => { if (this.lessonComplete(t.id)) last = i; });
+    return dict.themes.slice(last + 1).find(t => !this.lessonComplete(t.id)) || null;
+  }
+
   masteredInTheme(theme) {
     return theme.words.filter(w => (this.wordState(w.key)?.box || 0) >= Progress.MASTERED_BOX).length;
   }
@@ -256,7 +263,7 @@ class Progress {
     });
   }
 
-  // No treino de erros, a palavra só sai da lista ao fim de ERROR_CLEAR acertos seguidos (rok conta-os; errar volta a zero)
+  // No treino de erros, a palavra sai da lista quando acertas (à primeira, sem ser a nova tentativa); errar mantém-na
   resolveWord(key) {
     const w = this.data.words[key];
     if (!w) return;
@@ -289,12 +296,12 @@ class Progress {
     w.due = DateUtils.addDays(DateUtils.today(), Progress.INTERVALS[w.box]);
   }
 
-  // Erros de gramática (kind "g") e de perguntas dos textos (kind "r"): ref = "lição:número".
-  // Uma pergunta errada fica na lista e sai depois de acertares ERROR_CLEAR vezes seguidas
-  static ERROR_CLEAR = 3;
+  // Erros de gramática (kind "g"): ref = "lição:número". Uma pergunta errada fica na lista e sai quando acertas.
+  // As perguntas dos textos (kind "r") já não entram: dependem de te lembrares do texto, não do inglês
+  static ERROR_CLEAR = 1;
 
   recordError(src, ok) {
-    if (!src) return;
+    if (!src || src.kind === "r") return;
     const map = this.data.errs[src.kind];
     const e = map[src.ref];
     if (!ok) map[src.ref] = { n: (e?.n || 0) + 1, ok: 0 };
@@ -469,17 +476,6 @@ class Progress {
     this.bump("timed");
     this.exerciseDone(`challenge:${bestKey}`);
     this.data[bestKey] = Math.max(correct, this.data[bestKey] || 0);
-    return xp;
-  }
-
-  // Cartões de revisão: 1 XP por cartão, com um máximo de 10 XP por dia
-  addFlash(cards) {
-    const room = Math.max(0, 10 - (this.day().cardxp || 0));
-    const xp = Math.min(room, cards);
-    this.addXp(xp);
-    this.bump("cardxp", xp);
-    this.bump("cards", cards);
-    if (cards > 0) this.exerciseDone("flash");
     return xp;
   }
 

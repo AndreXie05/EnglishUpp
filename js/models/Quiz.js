@@ -76,14 +76,38 @@ class Quiz {
     return (typeof SENTENCE_PT !== "undefined" && SENTENCE_PT[en]) || "";
   }
 
+  // Frases dos textos com a palavra que já têm tradução (as outras não entram nos exercícios: depois de responder
+  // mostra-se sempre a frase com a pronúncia e a tradução)
+  static translatedAlts(theme, word) {
+    return Quiz.altSentences(theme, word).map(en => ({ en, pt: Quiz.ptOf(en) })).filter(s => s.pt);
+  }
+
   // Frase de uma pergunta com espaço. “Escolher” e “escrever” usam frases diferentes da mesma palavra:
   // o exemplo e as frases de posição par num; as outras noutro. Sem alternativas, usa o exemplo
   pickSentence(word, theme, type) {
-    const all = [{ en: word.exEn, pt: word.exPt }, ...Quiz.altSentences(theme, word).map(en => ({ en, pt: Quiz.ptOf(en) }))];
+    const all = [{ en: word.exEn, pt: word.exPt }, ...Quiz.translatedAlts(theme, word)];
     const writing = type === Question.TYPES.FILL_WRITE || type === Question.TYPES.FILL_WRITE_PT;
     const mine = all.filter((_, i) => writing === (i % 2 === 1));
-    const pool = mine.length ? mine : all;
+    let pool = mine.length ? mine : all;
+    // Evita frases em que a palavra está numa lista (“red, blue, ___ and green”): aí qualquer cor serve
+    const clear = pool.filter(s => !Quiz.inList(s.en, word, theme));
+    if (clear.length) pool = clear;
+    else { const any = all.filter(s => !Quiz.inList(s.en, word, theme)); if (any.length) pool = any; }
     return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // A palavra está numa lista com outras palavras da lição da mesma classe (“red, ___ and green”, “blue and ___”)
+  static inList(sentence, word, theme) {
+    const ranges = theme.wordRanges(sentence);
+    const r = ranges.find(x => x.key === word.key);
+    if (!r) return false;
+    const pos = k => theme.words.find(w => w.key === k)?.pos;
+    const others = ranges.filter(x => x.key !== word.key && pos(x.key) === word.pos);
+    const before = sentence.slice(0, r.start).match(/(?:,|\b(?:and|or))\s*$/i);
+    const after = sentence.slice(r.end).match(/^\s*(?:,|(?:and|or)\b)\s*/i);
+    const end = before ? sentence.slice(0, r.start - before[0].length).trimEnd().length : -1;
+    const start = after ? r.end + after[0].length : -1;
+    return others.some(x => x.end === end || x.start === start);
   }
 
   // Frases com tradução em que a palavra aparece: o exemplo e as frases da leitura curta do tema
@@ -93,14 +117,24 @@ class Quiz {
   }
 
   // Uma frase com tradução, sorteada entre as que existem (para não ser sempre o mesmo exemplo)
-  pickPair(word, theme) {
-    const all = Quiz.pairs(theme, word);
+  // Nas frases com espaço (fill) evita, se puder, as frases em que a palavra está numa lista
+  pickPair(word, theme, fill = false) {
+    let all = Quiz.pairs(theme, word);
+    if (fill) {
+      const clear = all.filter(s => !Quiz.inList(s.en, word, theme));
+      if (clear.length) all = clear;
+      else {
+        // Só há frases com listas: tenta as dos textos que têm tradução
+        const alts = Quiz.translatedAlts(theme, word).filter(s => !Quiz.inList(s.en, word, theme));
+        if (alts.length) all = alts;
+      }
+    }
     return all[Math.floor(Math.random() * all.length)];
   }
 
   // Frase para “o que significa nesta frase”: não precisa de tradução, por isso há muito por onde escolher
   pickAny(word, theme) {
-    const alts = Quiz.altSentences(theme, word).map(en => ({ en, pt: Quiz.ptOf(en) }));
+    const alts = Quiz.translatedAlts(theme, word);
     const all = alts.length && Math.random() < 0.75 ? [...alts, ...Quiz.pairs(theme, word).slice(1)] : Quiz.pairs(theme, word).concat(alts);
     return all[Math.floor(Math.random() * all.length)];
   }
@@ -212,12 +246,16 @@ class Quiz {
     let type = types[Math.floor(Math.random() * types.length)];
 
     const sentTypes = [T.FILL, T.FILL_WRITE, T.FILL_PT, T.FILL_WRITE_PT];
-    let sent = [T.FILL_PT, T.FILL_WRITE_PT, T.SENT_PT, T.SENT_EN].includes(type) ? this.pickPair(word, theme)
+    let sent = [T.FILL_PT, T.FILL_WRITE_PT, T.SENT_PT, T.SENT_EN].includes(type) ? this.pickPair(word, theme, type === T.FILL_PT || type === T.FILL_WRITE_PT)
       : type === T.CTX ? this.pickAny(word, theme) : sentTypes.includes(type) ? this.pickSentence(word, theme, type) : null;
     // Frase com pouco contexto (“The car is ___.”) serve para várias palavras: mostra a tradução da frase
     if (type === T.FILL && word.exPt && Quiz.vague(sent.en, word, theme)) {
       type = T.FILL_PT;
-      sent = this.pickPair(word, theme);
+      sent = this.pickPair(word, theme, true);
+    }
+    // Palavra no meio de uma lista e não há outra frase: mostra a tradução para se saber qual é
+    if ((type === T.FILL || type === T.FILL_WRITE) && sent.pt && Quiz.inList(sent.en, word, theme)) {
+      type = type === T.FILL ? T.FILL_PT : T.FILL_WRITE_PT;
     }
     const isFill = type === T.FILL || type === T.FILL_PT;
 

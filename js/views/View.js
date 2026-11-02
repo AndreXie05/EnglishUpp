@@ -67,7 +67,7 @@ class View {
         }).join("")}</div></div>
       <div class="wordnav"><button class="btn ghost" data-action="qprev" aria-label="Pergunta anterior" ${qi === 0 ? "disabled" : ""}>←</button>
         <button class="btn" data-action="qnext" ${answered ? "" : "disabled"}>${qi === total - 1 ? "Ver resultado" : "Seguinte →"}</button></div>
-      <span class="muted" style="font-size:.85rem">Também podes usar as teclas 1 a ${q.options.length} para responder e as setas ← → para andar.</span></section>`;
+      <span class="muted" style="font-size:.85rem">Também podes usar as teclas 1 a ${q.options.length} para responder, Enter para seguir e as setas ← → para andar.</span></section>`;
   }
 
   // Passos do stepper; devolve o novo índice ou null se não se mexe

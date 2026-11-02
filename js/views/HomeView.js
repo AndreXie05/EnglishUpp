@@ -217,7 +217,7 @@ class HomeView extends View {
     const n = er.items.length;
     return `<section class="panel hero errbanner"><span class="heroicon" aria-hidden="true">🎯</span><div class="eyebrow">Para rever</div>
       <h2>${n} erro${n > 1 ? "s" : ""} à espera de ti</h2>
-      <p class="muted" style="margin:0">Palavras, gramática e perguntas de textos que ainda falhas. Treinar isto é o que mais ajuda.</p>
+      <p class="muted" style="margin:0">Palavras e gramática que ainda falhas. Treinar isto é o que mais ajuda.</p>
       <div class="row"><button class="btn" data-action="nav" data-v="teste">Rever agora</button></div></section>`;
   }
 

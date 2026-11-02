@@ -8,7 +8,7 @@ class GameView extends View {
   get tab() { return "jogo"; }
 
   get currentLevel() {
-    return this.level || this.progress.nextTheme(this.dict)?.level || "A1";
+    return this.level || this.progress.currentTheme(this.dict)?.level || "A1";
   }
 
   render() {
@@ -167,22 +167,17 @@ class GameView extends View {
     ["game", "scramble", "🧩", "Frases", "Põe as palavras na ordem certa", 3],
     ["adventures", "", "🎭", "Conversas e histórias", "Escolhe o que dizer e muda o final", 6],
     ["game", "mystery", "🔤", "Palavra misteriosa", "Adivinha a palavra em 6 tentativas", 2],
-    ["game", "rain", "🌧️", "Chuva de palavras", "Toca na tradução antes de cair", 1],
-    ["game", "anagram", "🔀", "Anagramas", "Ordena as letras contra o relógio", 4],
+    ["game", "anagram", "🔀", "Anagramas", "Ordena as letras: contra o relógio ou com 3 vidas", 4],
     ["game", "bingo", "🎱", "Bingo de palavras", "Faz uma linha com as traduções", 8],
     ["game", "cross", "📰", "Palavras cruzadas", "Pistas em inglês: lê e escreve", 3],
     ["game", "emoji", "🖼️", "Adivinha a imagem", "Vê o emoji e acerta a palavra", 4],
     ["game", "duel", "⚔️", "Duelo", "Corrida de perguntas contra um adversário", 8],
-    ["game", "odd", "🧐", "Intruso", "Qual palavra não pertence ao grupo?", 1],
     ["game", "bomb", "💣", "Bomba-relógio", "Responde antes de ela explodir", 5],
     ["game", "tower", "🏗️", "Torre", "Sobe o mais alto que conseguires", 7],
     ["game", "chain", "🔗", "Cadeia de palavras", "A palavra seguinte começa na última letra", 6],
     ["game", "fix", "🛠️", "Corrige o erro", "Toca na palavra errada da frase", 8],
     ["game", "dictation", "✍️", "Ditado", "Lê a frase e escreve-a de memória", 2],
-    ["game", "quizshow", "💶", "Quem quer ser milionário", "15 perguntas, 3 ajudas", 7],
-    ["flash", "", "⚡", "Cartões", "Revisão rápida: sabias ou não?", 4],
     ["vchallenge", "", "⏱️", "Verbos em 60 s", "Irregulares em todos os tempos", 5],
-    ["hardwords", "", "🎯", "Palavras difíceis", "As que mais erras, com dicas", 6],
   ];
 
   static COLORS = { 1: "#E5484D", 2: "#8E4EC6", 3: "#12A594", 4: "#F5A524", 5: "#2F6FED", 6: "#D6409F", 7: "#30A46C", 8: "#5B5BD6" };
@@ -198,8 +193,7 @@ class GameView extends View {
       const n = Object.keys(d.escape || {}).length;
       return n ? `🔓 ${n} sala${n > 1 ? "s" : ""}` : null;
     }
-    if (game === "quizshow") return d.quizShowBest ? `🏆 ${d.quizShowBest.toLocaleString("pt-PT")} €` : null;
-    const key = { challenge: "challengeBest", bomb: "bombBest", tower: "towerBest", rain: "rainBest", anagram: "anagramBest", vchallenge: "verbBest" }[game];
+    const key = { challenge: "challengeBest", bomb: "bombBest", tower: "towerBest", anagram: "anagramBest", vchallenge: "verbBest" }[game];
     return key && d[key] ? `🏆 ${d[key]}` : null;
   }
 
@@ -225,7 +219,7 @@ class GameView extends View {
   mapPanel() {
     const level = this.currentLevel;
     const themes = this.dict.themes.filter(t => t.level === level);
-    const next = this.progress.nextTheme(this.dict);
+    const here = this.progress.currentTheme(this.dict);
     const color = ThemesView.LEVEL_COLORS[level] || "var(--accent)";
     const tabs = ProgressView.LEVELS.map(([code]) =>
       `<button data-action="glevel" data-v="${code}" aria-pressed="${code === level}">${code}</button>`).join("");
@@ -238,11 +232,11 @@ class GameView extends View {
     const nodes = themes.map((t, i) => {
       const studied = this.progress.lessonComplete(t.id);
       const full = studied && this.progress.masteredInTheme(t) === t.size;
-      const here = !studied && (t === next || this.progress.partsDone(t.id) > 0);
+      const isHere = t === here, started = !studied && this.progress.partsDone(t.id) > 0;
       done += studied ? 1 : 0;
       stars += full ? 1 : 0;
-      const cls = full ? "gold" : studied ? "done" : here ? "now" : "todo";
-      const status = full ? "★ Dominada" : studied ? "✓ Concluída" : here ? "📍 Estás aqui" : `Lição ${t.number}`;
+      const cls = full ? "gold" : studied ? "done" : isHere ? "now" : "todo";
+      const status = full ? "★ Dominada" : studied ? "✓ Concluída" : isHere ? "📍 Estás aqui" : started ? `Em curso · ${this.progress.partsDone(t.id)}/${Progress.LESSON_PARTS.length}` : `Lição ${t.number}`;
       return `<button class="mstop ${cls} ${X(i) >= 44 ? "flip" : ""}" style="${place(i, i * H)}" data-action="open" data-v="${t.id}">
         <span class="mnode"><span aria-hidden="true">${ThemesView.icon(t)}</span><b>${full ? "★" : studied ? "✓" : t.number}</b></span>
         <span class="mlabel"><span class="mtitle">${this.esc(t.pt)}</span><span class="msub">${status}</span></span></button>`;
@@ -280,7 +274,7 @@ class GameView extends View {
         return true;
       }
       case "game": {
-        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, rain: RainView, anagram: AnagramView, bingo: BingoView, quizshow: QuizShowView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, odd: OddView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView, story: StoryView };
+        const views = { hangman: HangmanView, scramble: ScrambleView, mystery: MysteryView, anagram: AnagramView, bingo: BingoView, cross: CrosswordView, emoji: EmojiView, duel: DuelView, bomb: BombView, tower: TowerView, chain: ChainView, fix: FixView, dictation: DictationView, story: StoryView };
         this.app.show(new views[value](this.app));
         return true;
       }

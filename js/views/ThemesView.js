@@ -97,7 +97,8 @@ class ThemesView extends View {
     const score = this.progress.themeScore(t.id), band = Progress.band(score);
     const state = done ? "done" : started ? "doing" : isNext ? "next" : "new";
     const badge = { done: "✓ Concluída", doing: "Em curso", next: "▶ Próxima", new: "Nova" }[state];
-    const segs = parts.map(id => `<i class="${this.progress.data.best[`${t.id}:${id}`] != null ? "on" : ""}"></i>`).join("");
+    // A barra enche da esquerda para a direita (quantas partes estão feitas, seja qual for a ordem em que as fizeste)
+    const segs = parts.map((_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("");
     return `<button class="lcard ${state}" style="--lc:${ThemesView.LEVEL_COLORS[t.level] || "var(--accent)"}" data-action="open" data-v="${t.id}">
       <span class="lc-top"><span class="lc-icon" aria-hidden="true">${ThemesView.icon(t)}</span>
         <span class="lc-num">Lição ${t.number}</span><span class="lc-badge">${badge}</span></span>

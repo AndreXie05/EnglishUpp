@@ -104,7 +104,7 @@ class LessonView extends View {
   onKey(e) {
     if (this.section === "texto" && this.theme.story) {
       const k = e.key, n = Number(k), qs = this.theme.story.questions;
-      if (k === "ArrowRight") this.onAction("qnext");
+      if (k === "ArrowRight" || (k === "Enter" && e.target.tagName !== "BUTTON" && this.answers[this.qi] !== undefined)) this.onAction("qnext");
       else if (k === "ArrowLeft") this.onAction("qprev");
       else if (n >= 1 && n <= 4 && this.qi < qs.length && this.answers[this.qi] === undefined && qs[this.qi].options[n - 1] !== undefined) {
         this.onAction("storyPick", String(n - 1), { dataset: { q: String(this.qi) } });

@@ -148,12 +148,6 @@ class App {
       case "translate":
         this.show(new TranslationView(this, [this.dict.theme(value)], this.dict.theme(value).pt));
         break;
-      case "flash":
-        this.show(new FlashView(this));
-        break;
-      case "hardwords":
-        this.show(new HardWordsView(this));
-        break;
       case "adventures":
         this.show(new AdventureView(this));
         break;

@@ -1,4 +1,4 @@
-// O que o aluno ainda falha, por nível ou por tema: palavras, exercícios de gramática e perguntas dos textos.
+// O que o aluno ainda falha, por nível ou por tema: palavras e exercícios de gramática (as perguntas dos textos não entram).
 // Cada treino é novo: escolhe ao acaso entre os erros que ainda estão por rever.
 class ErrorReview {
   static GRAMMAR_MAX = 15;
@@ -22,12 +22,6 @@ class ErrorReview {
     Object.keys(p.data.errs.g).forEach(ref => {
       const lesson = this.grammarLesson(ref);
       if (lesson) out.push({ kind: "g", ref, level: lesson.level, group: "g:" + lesson.id, label: "Gramática: " + lesson.pt });
-    });
-    Object.keys(p.data.errs.r).forEach(ref => {
-      const id = ref.split(":")[0];
-      const th = this.dict.theme(id), tx = this.texts.find(t => t.id === id);
-      if (th?.story) out.push({ kind: "r", ref, level: th.level, group: th.id, label: th.pt });
-      else if (tx) out.push({ kind: "r", ref, level: tx.level, group: tx.id, label: "Texto: " + tx.title });
     });
     return out;
   }
@@ -71,10 +65,10 @@ class ErrorReview {
     return Utils.shuffle(this.select(scope).filter(i => i.kind === "w").map(i => i.ref)).slice(0, 25);
   }
 
-  // Lição de gramática "virtual" com exercícios de gramática e perguntas dos textos que ainda falhas
+  // Lição de gramática "virtual" com os exercícios de gramática que ainda falhas
   reviewLesson(scope) {
     const picked = Utils.shuffle(this.select(scope).filter(i => i.kind !== "w")).slice(0, ErrorReview.GRAMMAR_MAX);
-    const exercises = picked.map(i => i.kind === "g" ? this.grammarExercise(i.ref) : this.readingExercise(i.ref)).filter(Boolean);
+    const exercises = picked.map(i => this.grammarExercise(i.ref)).filter(Boolean);
     if (!exercises.length) return null;
     return {
       id: "revisao", review: true, level: scope.level || "", pt: "Revisão dos teus erros", exercises, size: exercises.length,
@@ -87,16 +81,5 @@ class ErrorReview {
   grammarExercise(ref) {
     const lesson = this.grammarLesson(ref);
     return lesson?.exercises[Number(ref.slice(ref.lastIndexOf(":") + 1))];
-  }
-
-  // Pergunta de compreensão de um texto, no formato de um exercício de escolha
-  readingExercise(ref) {
-    const [themeId, idx] = ref.split(":");
-    const story = this.dict.theme(themeId)?.story || this.texts.find(t => t.id === themeId);
-    const q = story?.questions[Number(idx)];
-    if (!q) return null;
-    const x = new GrammarExercise(["c", q.q, q.options[q.answer], q.options.filter((_, j) => j !== q.answer).join("|"), "", "Texto: " + story.title]);
-    x.src = { kind: "r", ref };
-    return x;
   }
 }
