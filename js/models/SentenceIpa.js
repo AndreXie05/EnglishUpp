@@ -66,6 +66,7 @@ class SentenceIpa {
   static SIBILANT = /(s|z|ʃ|ʒ)$/;
 
   // Junta o som do sufixo ao IPA da palavra base (com acento se passa a ter duas sílabas)
+  // O IPA segue o Cambridge (US): o r diz-se sempre (car /kɑːr/) e t̬ = t entre vogais, parecido com um r rápido (water /ˈwɑːt̬ɚ/)
   static add(ipa, kind, spelled) {
     if (kind === "ly" && /l$/.test(ipa)) {
       if (spelled.endsWith("le")) return SentenceIpa.stress(ipa.replace(/ə?l$/, "li")); // simple → simply
@@ -74,11 +75,12 @@ class SentenceIpa {
     let end;
     if (kind === "s") end = SentenceIpa.SIBILANT.test(ipa) ? "ɪz" : SentenceIpa.VOICELESS.test(ipa) ? "s" : "z";
     else if (kind === "d") end = /[td]$/.test(ipa) ? "ɪd" : /(p|k|f|θ|s|ʃ)$/.test(ipa) ? "t" : "d";
-    else end = { ing: "ɪŋ", er: "ə", est: "ɪst", ly: "li" }[kind];
-    if (/^[ɪə]/.test(end) && /r(e)?$/.test(spelled) && /[əɑɔɜɪʊe]ː?$/.test(ipa)) ipa += "r"; // car → caring /ˈkeərɪŋ/
+    else end = { ing: "ɪŋ", er: "ɚ", est: "ɪst", ly: "li" }[kind];
     if (kind === "ly" && /i$/.test(ipa)) ipa = ipa.slice(0, -1) + "ɪ"; // happy → happily
+    // t entre vogais: get /ɡet/ → getting /ˈɡet̬ɪŋ/
+    if (/^[ɪɚ]/.test(end)) ipa = ipa.replace(/([aeiouɑɔəɝɚɪʊʌæːr])t$/, "$1t̬");
     const out = ipa + end;
-    return /^[ɪə]/.test(end) || end === "li" ? SentenceIpa.stress(out) : out;
+    return /^[ɪɚ]/.test(end) || end === "li" ? SentenceIpa.stress(out) : out;
   }
 
   // Palavra que ganhou uma sílaba: se não tinha acento, leva-o no início

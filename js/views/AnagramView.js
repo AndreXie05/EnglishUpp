@@ -21,6 +21,8 @@ class AnagramView extends View {
     this.score = 0;
     this.skipped = 0;
     this.left = AnagramView.SECONDS;
+    this.deadline = Date.now() + AnagramView.SECONDS * 1000;
+    this.stopTimer();
     this.xp = 0;
     this.used = new Set();
     this.nextWord();
@@ -83,20 +85,25 @@ class AnagramView extends View {
         <div class="row"><button class="btn" data-action="angstart" data-v="${this.mode}">Jogar outra vez</button><button class="btn ghost" data-action="angmenu">Mudar de modo</button><button class="btn ghost" data-action="nav" data-v="jogo">Voltar ao Jogo</button></div></section>`;
   }
 
+  // O ecrã é refeito a cada letra: o relógio não pode recomeçar aqui, e o tempo conta pela hora real
   afterRender() {
-    clearInterval(this.timer);
-    if (this.state !== "play" || this.mode === "lives") return;
+    if (this.state !== "play" || this.mode === "lives" || this.timer) return;
     this.timer = setInterval(() => {
-      if (this.app.view !== this || this.state !== "play") return clearInterval(this.timer);
-      this.left--;
+      if (this.app.view !== this || this.state !== "play") return this.stopTimer();
+      this.left = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000));
       const el = document.getElementById("angtime");
       if (el) el.textContent = `⏱ ${this.left}s`;
       if (this.left <= 0) this.end();
-    }, 1000);
+    }, 200);
+  }
+
+  stopTimer() {
+    clearInterval(this.timer);
+    this.timer = null;
   }
 
   end(allDone = false) {
-    clearInterval(this.timer);
+    this.stopTimer();
     this.state = "over";
     this.allDone = allDone;
     this.xp = Math.min(20, this.score);

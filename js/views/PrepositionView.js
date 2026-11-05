@@ -4,7 +4,7 @@ class PrepositionView extends View {
 
   // [preposição, português, posição do objeto em relação ao outro]
   static PREPS = [
-    ["on", "em cima de", "on", "ɒn"], ["under", "debaixo de", "under", "ˈʌndə"], ["in", "dentro de", "in", "ɪn"], ["behind", "atrás de", "behind", "bɪˈhaɪnd"],
+    ["on", "em cima de", "on", "ɑːn"], ["under", "debaixo de", "under", "ˈʌndɚ"], ["in", "dentro de", "in", "ɪn"], ["behind", "atrás de", "behind", "bɪˈhaɪnd"],
     ["in front of", "à frente de", "front", "ɪn frʌnt əv"], ["next to", "ao lado de", "next", "nekst tuː"], ["above", "acima de", "above", "əˈbʌv"], ["between", "entre", "between", "bɪˈtwiːn"],
   ];
 

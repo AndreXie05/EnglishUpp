@@ -29,6 +29,11 @@ class Progress {
     this.data.badges = this.data.badges || {};
     this.data.mis = this.data.mis || {};
     this.data.diary = this.data.diary || [];
+    // O relógio do anagrama andava devagar: o recorde contra o relógio antigo não conta (só se apaga uma vez)
+    if (!this.data.anagramClockFixed) {
+      this.data.anagramBest = 0;
+      this.data.anagramClockFixed = true;
+    }
     this.purgeCounts();
     this.purgeRounds();
   }

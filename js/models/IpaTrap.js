@@ -2,13 +2,13 @@
 // São os enganos típicos de quem fala português: ler à letra, trocar a vogal, acrescentar um "i" no fim,
 // ler letras mudas (knife → /knaɪf/) ou trocar sons que não existem em português (θ → t).
 class IpaTrap {
-  static SYMBOLS = ["tʃ", "dʒ", "aɪ", "eɪ", "ɔɪ", "aʊ", "əʊ", "ɪə", "eə", "ʊə", "iː", "ɑː", "ɔː", "uː", "ɜː"];
+  static SYMBOLS = ["tʃ", "dʒ", "aɪ", "eɪ", "ɔɪ", "aʊ", "oʊ", "iː", "ɑː", "ɔː", "uː", "ɝː"];
 
   static VOWELS = {
-    aɪ: ["ɪ", "eɪ", "iː"], eɪ: ["e", "aɪ", "æ"], ɔɪ: ["ɒ", "əʊ"], aʊ: ["əʊ", "ɒ", "uː"], əʊ: ["ɒ", "aʊ", "uː"],
-    ɪə: ["iː", "eə"], eə: ["ɪə", "e"], ʊə: ["uː", "ɔː"], iː: ["ɪ", "aɪ", "e"], ɑː: ["æ", "eɪ", "ʌ"], ɔː: ["əʊ", "ɒ", "aʊ"],
-    uː: ["ʊ", "ʌ", "aʊ"], ɜː: ["eə", "ɔː", "ʊə"], ə: ["æ", "e", "ɒ"], ɪ: ["iː", "aɪ", "e"], i: ["aɪ", "e"], e: ["iː", "eɪ", "ɪ"],
-    æ: ["e", "eɪ", "ɑː"], ʌ: ["ɒ", "uː", "æ"], ɒ: ["əʊ", "ʌ", "ɔː"], ʊ: ["uː", "ʌ", "əʊ"], u: ["ʊ", "ʌ"],
+    aɪ: ["ɪ", "eɪ", "iː"], eɪ: ["e", "aɪ", "æ"], ɔɪ: ["ɑː", "oʊ"], aʊ: ["oʊ", "ɑː", "uː"], oʊ: ["ɑː", "aʊ", "uː"],
+    iː: ["ɪ", "aɪ", "e"], ɑː: ["æ", "eɪ", "ʌ"], ɔː: ["oʊ", "ɑː", "aʊ"], uː: ["ʊ", "ʌ", "aʊ"], ɝː: ["er", "ɔːr", "ʊr"], ɚ: ["ɑːr", "er", "ɔːr"],
+    ə: ["æ", "e", "ɑː"], ɪ: ["iː", "aɪ", "e"], i: ["aɪ", "e"], e: ["iː", "eɪ", "ɪ"],
+    æ: ["e", "eɪ", "ɑː"], ʌ: ["ɑː", "uː", "æ"], ʊ: ["uː", "ʌ", "oʊ"], u: ["ʊ", "ʌ"],
   };
 
   static CONSONANTS = { θ: ["t", "f"], ð: ["d", "z"], ʃ: ["s", "tʃ"], tʃ: ["ʃ", "k"], dʒ: ["ʒ", "ɡ"], ʒ: ["dʒ", "z"], z: ["s"], v: ["b"], w: ["v"], ŋ: ["n", "ŋɡ"], h: [""] };
@@ -40,7 +40,7 @@ class IpaTrap {
     };
     const vowels = variants(IpaTrap.VOWELS), consonants = variants(IpaTrap.CONSONANTS);
     const spelled = word.toLowerCase();
-    const extraVowel = /[aeiouəɪʊʌæɒː]$/.test(ipa) ? null : ipa + "ɪ";
+    const extraVowel = /[aeiouəɪʊʌæːɚr]$/.test(ipa) ? null : ipa + "ɪ";
     const silent = /^kn/.test(spelled) ? "k" + ipa : /^wr/.test(spelled) ? "w" + ipa : /mb$/.test(spelled) ? ipa + "b" : null;
     const pool = [IpaTrap.byLetters(word), vowels[0], silent, extraVowel, consonants[0], ...vowels.slice(1), ...consonants.slice(1)];
     // só o acento tónico de diferença não conta como opção diferente

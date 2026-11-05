@@ -75,10 +75,7 @@ class ChainView extends View {
 
   // Pronúncia de uma forma regular: -s (/s/, /z/ ou /ɪz/), -ed (/t/, /d/ ou /ɪd/) e -ing (/ɪŋ/)
   static formIpa(ipa, kind) {
-    if (kind === "ing") return ipa + "ɪŋ";
-    const sounds = ipa.replace(/[ːˈˌ.]/g, ""), end = /(tʃ|dʒ)$/.test(sounds) ? sounds.slice(-2) : sounds.slice(-1);
-    if (kind === "s") return ipa + (/^(s|z|ʃ|ʒ|tʃ|dʒ)$/.test(end) ? "ɪz" : /^[ptkfθ]$/.test(end) ? "s" : "z");
-    return ipa + (/^[td]$/.test(end) ? "ɪd" : /^(p|k|f|s|ʃ|tʃ|θ)$/.test(end) ? "t" : "d");
+    return SentenceIpa.add(ipa, kind, "");
   }
 
   get last() { return this.chain.at(-1).w; }
