@@ -18,16 +18,23 @@ class CrosswordView extends View {
 
   get tab() { return "jogo"; }
 
-  // Até 3 pistas diferentes para a mesma palavra: definição, frase do exemplo e frase de um texto, com a palavra tapada
+  // A definição, se existir. Senão, até 3 frases com a palavra tapada e o significado em português:
+  // uma frase sozinha aceita muitas respostas e não dá para chegar lá sem ajuda
   clueVariants(word) {
-    const out = [], re = new RegExp(`\\b${word.en}\\b`, "i");
-    if (CROSS[word.en]) out.push(CROSS[word.en]);
+    if (CROSS[word.en]) return [CROSS[word.en]];
+    const out = [], re = new RegExp(`\\b${word.en}\\b`, "gi");
     const theme = this.app.dict.theme(word.themeId);
     [word.exEn, ...Quiz.altSentences(theme, word).slice(0, 4)].forEach(sen => {
-      if (!sen || out.length >= 3 || !re.test(sen) || sen.split(/\s+/).length > 22) return;
-      out.push(`Complete: “${sen.replace(re, "_____")}”`);
+      if (!sen || out.length >= 3 || sen.split(/\s+/).length > 22) return;
+      const blank = sen.replace(re, "_____");
+      if (blank !== sen) out.push(`Complete: “${blank}” — ${word.pt}`);
     });
     return out;
+  }
+
+  // As pistas com frase já trazem a tradução
+  hasPt(w) {
+    return w.clue.startsWith("Complete:");
   }
 
   // Escolhe uma das pistas, diferente da última vez que a palavra saiu
@@ -185,14 +192,14 @@ class CrosswordView extends View {
         <section class="panel xmid" style="gap:12px">
           <div class="xnow"><span class="eyebrow">${act.num} ${act.dir === "A" ? "→ na horizontal" : "↓ na vertical"} · ${act.w.length} letras</span>
             <div class="q" style="font-size:1.05rem">${this.esc(act.clue)}</div>
-            ${this.showPt ? `<div class="muted">${this.esc(act.word.pt)}</div>` : ""}</div>
+            ${this.showPt && !this.hasPt(act) ? `<div class="muted">${this.esc(act.word.pt)}</div>` : ""}</div>
           <div class="xgrid" style="--xc:${this.cols};grid-template-columns:repeat(${this.cols},var(--xs))">${grid}</div>
           <div class="muted" style="min-height:1.3em;text-align:center">${this.esc(this.msg)}</div>
           ${end}
           <div class="row" style="justify-content:center">
             <button class="btn ghost small" data-action="xcheck" ${this.done ? "disabled" : ""}>Verificar</button>
             <button class="btn ghost small" data-action="xreveal" ${this.done ? "disabled" : ""}>Revelar letra</button>
-            <button class="btn ghost small" data-action="xpt" aria-pressed="${this.showPt}">${this.showPt ? "Esconder tradução" : "Ver tradução"}</button>
+            ${this.hasPt(act) ? "" : `<button class="btn ghost small" data-action="xpt" aria-pressed="${this.showPt}">${this.showPt ? "Esconder tradução" : "Ver tradução"}</button>`}
             <button class="btn small" data-action="xnew">${this.done ? "Nova grelha" : "Outra grelha"}</button>
             <button class="btn ghost small" data-action="nav" data-v="jogo">Voltar</button></div>
           ${this.done ? "" : `<div class="mkb">${kb}</div>`}
