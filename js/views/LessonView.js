@@ -168,7 +168,10 @@ class LessonView extends View {
   finishSection() {
     const st = this.progress.lesson(this.theme.id);
     const n = this.progress.partsDone(this.theme.id), total = Progress.LESSON_PARTS.length;
-    if (st) return `<p class="muted" style="margin:0">${n === total ? "Concluída." : `Em progresso (${n}/${total}): faz os exercícios e as perguntas do texto para ficar estudada.`} Palavras guardadas a ${this.esc(DateUtils.format(st.studied))}.</p>`;
+    // Depois de terminar, a caixa fica no fundo com "Feito" (a lição continua aberta para voltares a ler)
+    if (st) return `<div class="panel"><div class="fb ok" style="margin:0">✓ <b>Feito</b> · palavras guardadas a ${this.esc(DateUtils.format(st.studied))}. Entram no teste do dia seguinte.</div>
+      <span class="muted" style="font-size:.9rem">${n === total ? "Lição concluída." : `Em progresso (${n}/${total}): faz os exercícios e as perguntas do texto para ficar estudada.`} Podes voltar a ler as palavras e o texto quando quiseres.</span>
+      <div class="row"><button class="btn ghost small" data-action="nav" data-v="hoje">Ir para Hoje</button></div></div>`;
     return `<div class="panel"><strong>Já estudaste as palavras e leste o texto?</strong>
       <div class="row"><button class="btn" data-action="finish">Terminei a lição</button></div>
       <span class="muted" style="font-size:.9rem">As ${this.theme.size} palavras entram no teste de amanhã.</span></div>`;
@@ -250,8 +253,8 @@ class LessonView extends View {
       case "finish":
         this.progress.finishLesson(this.theme);
         this.app.save();
-        this.app.toast.show("Lição concluída! O teste é amanhã.");
-        this.app.go("hoje");
+        this.app.toast.show("Lição terminada! As palavras entram no teste de amanhã.");
+        this.app.render();
         return true;
     }
     return false;
