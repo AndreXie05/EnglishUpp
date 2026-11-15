@@ -84,6 +84,7 @@ GLOSSARY.push(
   ["told","toʊld","verbo","disse / contou (passado de tell)"],
   ["tolerant","ˈtɑːlɚənt","adj.","tolerante"],
   ["tomb","tuːm","subst.","túmulo"],
+  ["ton","tʌn","subst.","tonelada"],
   ["tonight","təˈnaɪt","adv.","esta noite"],
   ["tonnes","tʌnz","subst.","toneladas"],
   ["too","tuː","adv.","também / demais"],

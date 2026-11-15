@@ -7,7 +7,9 @@ class Theme {
     this.pt = raw.pt;
     this.en = raw.en;
     this.words = raw.words.map(w => new Word(raw.id, w));
-    this.text = (raw.text || []).map(([en, pt]) => ({ en, pt }));
+    // Leitura curta: a do tema, ou a de READINGS (lições que não a tinham)
+    const text = raw.text?.length ? raw.text : (typeof READINGS !== "undefined" && READINGS[raw.id]) || [];
+    this.text = text.map(([en, pt]) => ({ en, pt }));
     this.story = STORIES[raw.id] || null; // texto de 200-300 palavras com perguntas
   }
 

@@ -1,5 +1,6 @@
 // Palavras de apoio do dicionário que não são palavras de uma lição, letras D–G: [inglês, IPA, classe, português]
 GLOSSARY.push(
+  ["dad","dæd","subst.","pai (informal)"],
   ["dancers","ˈdænsɚz","subst.","bailarinos"],
   ["danger","ˈdeɪndʒɚ","subst.","perigo"],
   ["dawn","dɑːn","subst.","amanhecer"],
@@ -22,6 +23,7 @@ GLOSSARY.push(
   ["deeply","ˈdiːpli","adv.","profundamente"],
   ["deer","dɪr","subst.","veado"],
   ["defect","ˈdiːfekt","subst.","defeito"],
+  ["defence","dɪˈfens","subst.","defesa"],
   ["defences","dɪˈfensɪz","subst.","defesas"],
   ["defend","dɪˈfend","verbo","defender"],
   ["defenders","dɪˈfendɚz","subst.","defensores"],
